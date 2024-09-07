@@ -9,34 +9,34 @@ fn print_usage() {
     eprintln!("usage: stronk <current_level> <target_level>");
 }
 
-fn parse_level(level: &String) -> i32 {
+fn parse_level(level: &str) -> Option<i32> {
     match level.parse() {
-        Ok(x) => x,
+        Ok(x) => Some(x),
         Err(_) => {
             logging::log(
                 LogLevel::Error,
                 format!("level is not a valid integer: {}", level),
             );
-            process::exit(1);
+            None
         }
     }
 }
 
-fn parse_args(args: &Vec<String>) -> Levels {
+fn parse_args(args: &Vec<&str>) -> Option<Levels> {
     if args.len() != 3 {
         print_usage();
-        process::exit(1);
+        return None;
     }
 
-    let current_level = parse_level(&args[1]);
-    let target_level = parse_level(&args[2]);
-
-    match Levels::new(current_level, target_level) {
-        Some(x) => x,
-        None => {
-            process::exit(1);
+    let current_level = parse_level(args[1]);
+    if let Some(c) = current_level {
+        let target_level = parse_level(args[2]);
+        if let Some(t) = target_level {
+            return Levels::new(c, t);
         }
     }
+
+    None
 }
 
 fn parse_stat_kind(kind: &str) -> Option<StatType> {
@@ -96,7 +96,16 @@ fn parse_prompt(prompt: &str) -> Option<Statistic> {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let _levels = parse_args(&args);
+    // parse_args() is easier to test if we can pass string literals
+    // instead of having to use String::from() everywhere.
+    let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+
+    let _levels = match parse_args(&args) {
+        Some(x) => x,
+        None => {
+            process::exit(1);
+        }
+    };
 
     loop {
         let mut prompt = String::new();
@@ -105,5 +114,55 @@ fn main() {
             .expect("failed to read prompt");
 
         let _stat = parse_prompt(&prompt);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accept_valid_args() {
+        assert!(parse_args(&vec!["", "1", "2"]).is_some());
+        assert!(parse_args(&vec!["", "2", "1"]).is_some());
+        assert!(parse_args(&vec!["", "1", "1"]).is_some());
+        assert!(parse_args(&vec!["", "-1", "24"]).is_some());
+        assert!(parse_args(&vec!["", "24", "-1"]).is_some());
+        assert!(parse_args(&vec!["something", "1", "2"]).is_some());
+    }
+
+    #[test]
+    fn reject_invalid_args() {
+        assert!(parse_args(&vec![]).is_none());
+        assert!(parse_args(&vec!["1", "2"]).is_none());
+        assert!(parse_args(&vec!["", "1", "x"]).is_none());
+        assert!(parse_args(&vec!["", "x", "1"]).is_none());
+        assert!(parse_args(&vec!["", "x", "x"]).is_none());
+        assert!(parse_args(&vec!["", "-2", "2"]).is_none());
+        assert!(parse_args(&vec!["", "1", "25"]).is_none());
+        assert!(parse_args(&vec!["", "1", "2.345"]).is_none());
+        assert!(parse_args(&vec!["", "1", "2", "3"]).is_none());
+    }
+
+    #[test]
+    fn accept_valid_prompt() {
+        assert!(parse_prompt("ac 12").is_some());
+        assert!(parse_prompt("AC 12").is_some());
+        assert!(parse_prompt("   ac   12    ").is_some());
+        assert!(parse_prompt("ac 0").is_some());
+        assert!(parse_prompt("ac -1").is_some());
+        assert!(parse_prompt("ac -34").is_some());
+    }
+
+    #[test]
+    fn reject_invalid_prompt() {
+        assert!(parse_prompt("").is_none());
+        assert!(parse_prompt("ac").is_none());
+        assert!(parse_prompt("invalid").is_none());
+        assert!(parse_prompt("ac x").is_none());
+        assert!(parse_prompt("invalid 12").is_none());
+        assert!(parse_prompt("invalid x").is_none());
+        assert!(parse_prompt("ac 12 34").is_none());
+        assert!(parse_prompt("ac 12.34").is_none());
     }
 }
