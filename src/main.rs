@@ -123,7 +123,10 @@ mod tests {
 
     #[test]
     fn accept_valid_args() {
-        assert!(parse_args(&vec!["", "1", "2"]).is_some());
+        let levels = parse_args(&vec!["", "1", "2"]).unwrap();
+        assert_eq!(levels.current, 1);
+        assert_eq!(levels.target, 2);
+
         assert!(parse_args(&vec!["", "2", "1"]).is_some());
         assert!(parse_args(&vec!["", "1", "1"]).is_some());
         assert!(parse_args(&vec!["", "-1", "24"]).is_some());
@@ -146,7 +149,10 @@ mod tests {
 
     #[test]
     fn accept_valid_prompt() {
-        assert!(parse_prompt("ac 12").is_some());
+        let statistic = parse_prompt("ac 12").unwrap();
+        assert!(statistic.kind == StatType::ArmorClass);
+        assert!(statistic.value == 12.0);
+
         assert!(parse_prompt("AC 12").is_some());
         assert!(parse_prompt("   ac   12    ").is_some());
         assert!(parse_prompt("ac 0").is_some());
