@@ -1,4 +1,5 @@
 use crate::statistic::StatType;
+use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum Proficiency {
@@ -7,6 +8,20 @@ pub enum Proficiency {
     Moderate,
     High,
     Extreme,
+}
+
+impl fmt::Display for Proficiency {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Proficiency::Terrible => "Terrible",
+            Proficiency::Low => "Low",
+            Proficiency::Moderate => "Moderate",
+            Proficiency::High => "High",
+            Proficiency::Extreme => "Extreme",
+        };
+
+        write!(f, "{}", s)
+    }
 }
 
 pub struct StatTable {

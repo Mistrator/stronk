@@ -95,7 +95,10 @@ fn parse_prompt(prompt: &str) -> Option<Statistic> {
 }
 
 fn print_result(result: ScaleResult) {
-    println!("{} {}", result.stat.kind, result.stat.value);
+    println!(
+        "{} {} ({}) ({})",
+        result.stat.kind, result.stat.value, result.proficiency, result.method
+    );
 }
 
 fn main() {

@@ -3,12 +3,25 @@ use crate::logging::{self, LogLevel};
 use crate::statistic::Statistic;
 use crate::tables::{Proficiency, StatTable};
 use crate::utils::float_eq;
+use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ScaleMethod {
     Exact,
     Interpolated,
     Extrapolated,
+}
+
+impl fmt::Display for ScaleMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            ScaleMethod::Exact => "exact",
+            ScaleMethod::Interpolated => "interpolated",
+            ScaleMethod::Extrapolated => "extrapolated",
+        };
+
+        write!(f, "{}", s)
+    }
 }
 
 #[derive(Clone, Copy)]
