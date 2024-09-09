@@ -3,6 +3,7 @@ use std::io;
 use std::process;
 use stronk::levels::Levels;
 use stronk::logging::{self, LogLevel};
+use stronk::scaling::ScaleResult;
 use stronk::statistic::{StatType, Statistic};
 
 fn print_usage() {
@@ -50,14 +51,14 @@ fn parse_stat_kind(kind: &str) -> Option<StatType> {
 }
 
 // Ensure the input is an integer. However, we still want to store it as f64.
-fn parse_stat_value_integer(value: &str) -> Option<f64> {
+fn parse_stat_value_integer(kind: StatType, value: &str) -> Option<f64> {
     let parsed: Result<i32, _> = value.parse();
     match parsed {
         Ok(p) => Some(p.into()),
         Err(_) => {
             logging::log(
                 LogLevel::Error,
-                format!("statistic value is not a valid integer: {}", value),
+                format!("{} value is not a valid integer: {}", kind, value),
             );
             None
         }
@@ -66,7 +67,7 @@ fn parse_stat_value_integer(value: &str) -> Option<f64> {
 
 fn parse_stat_value(kind: StatType, value: &str) -> Option<f64> {
     match kind {
-        StatType::ArmorClass => parse_stat_value_integer(value),
+        StatType::ArmorClass => parse_stat_value_integer(kind, value),
     }
 }
 
@@ -93,6 +94,10 @@ fn parse_prompt(prompt: &str) -> Option<Statistic> {
     None
 }
 
+fn print_result(result: ScaleResult) {
+    println!("{} {}", result.stat.kind, result.stat.value);
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -100,7 +105,7 @@ fn main() {
     // instead of having to use String::from() everywhere.
     let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 
-    let _levels = match parse_args(&args) {
+    let levels = match parse_args(&args) {
         Some(x) => x,
         None => {
             process::exit(1);
@@ -113,7 +118,13 @@ fn main() {
             .read_line(&mut prompt)
             .expect("failed to read prompt");
 
-        let _stat = parse_prompt(&prompt);
+        let stat = parse_prompt(&prompt);
+        if stat.is_none() {
+            continue;
+        }
+
+        let scale_result = stronk::scale_statistic(levels, stat.unwrap());
+        print_result(scale_result);
     }
 }
 

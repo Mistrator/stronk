@@ -1,6 +1,18 @@
+use std::fmt;
+
 #[derive(Clone, Copy, PartialEq)]
 pub enum StatType {
     ArmorClass,
+}
+
+impl fmt::Display for StatType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            StatType::ArmorClass => "AC",
+        };
+
+        write!(f, "{}", s)
+    }
 }
 
 #[derive(Clone, Copy)]

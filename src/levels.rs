@@ -3,6 +3,13 @@ use crate::logging::{self, LogLevel};
 pub const MIN_LEVEL: i32 = -1;
 pub const MAX_LEVEL: i32 = 24;
 
+pub fn num_levels() -> usize {
+    (MAX_LEVEL - MIN_LEVEL + 1)
+        .try_into()
+        .expect("should be MAX_LEVEL >= MIN_LEVEL")
+}
+
+#[derive(Clone, Copy)]
 pub struct Levels {
     pub current: i32,
     pub target: i32,
