@@ -1,6 +1,6 @@
 use crate::statistic::StatType;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum Proficiency {
     Terrible,
     Low,

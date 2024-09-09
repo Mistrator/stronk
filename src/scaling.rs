@@ -2,8 +2,9 @@ use crate::levels::{Levels, MIN_LEVEL};
 use crate::logging::{self, LogLevel};
 use crate::statistic::Statistic;
 use crate::tables::{Proficiency, StatTable};
+use crate::utils::float_eq;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ScaleMethod {
     Exact,
     Interpolated,
@@ -15,10 +16,6 @@ pub struct ScaleResult {
     pub stat: Statistic,
     pub proficiency: Proficiency,
     pub method: ScaleMethod,
-}
-
-fn float_eq(a: f64, b: f64) -> bool {
-    (b - a).abs() < 1e-6
 }
 
 // Map a value from ]al, ar[ to [bl, br].
