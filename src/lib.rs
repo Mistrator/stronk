@@ -2,6 +2,7 @@ use crate::levels::Levels;
 use crate::scaling::ScaleResult;
 use crate::statistic::Statistic;
 
+pub mod damage;
 pub mod levels;
 pub mod logging;
 pub mod scaling;
