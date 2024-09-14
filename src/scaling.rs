@@ -1,7 +1,8 @@
+use crate::damage::{Damage, DamageComponent};
 use crate::levels::{Levels, MIN_LEVEL};
 use crate::logging::{self, LogLevel};
 use crate::statistic::Statistic;
-use crate::tables::{Proficiency, StatTable};
+use crate::tables::{self, Proficiency, StatTable};
 use crate::utils::float_eq;
 use std::fmt;
 
@@ -60,7 +61,7 @@ fn extrapolate(cur_edge: f64, tgt_edge: f64, value: f64) -> f64 {
     }
 }
 
-pub fn scale_by_table(levels: Levels, stat: Statistic, table: StatTable) -> ScaleResult {
+fn scale_by_table(levels: Levels, stat: Statistic, table: StatTable) -> ScaleResult {
     let cur_row_i: usize = (levels.current - MIN_LEVEL)
         .try_into()
         .expect("levels should be in range");
@@ -138,9 +139,81 @@ pub fn scale_by_table(levels: Levels, stat: Statistic, table: StatTable) -> Scal
     unreachable!("we should always either get an exact result, interpolate or extrapolate");
 }
 
+fn scale_all_damage_components(damage: &Damage, scaled_total: f64) -> Damage {
+    assert!(scaled_total > 0.0);
+    assert!(!damage.components.is_empty());
+
+    let current_total = damage.total_average_value();
+
+    let mut scaled_damage = Damage::new();
+
+    let ratios: Vec<f64> = damage
+        .components
+        .iter()
+        .map(|c| c.average_value / current_total)
+        .collect();
+
+    #[allow(clippy::needless_range_loop)]
+    for i in 0..damage.components.len() {
+        let scaled_average_damage = ratios[i] * scaled_total;
+        let new_component = DamageComponent {
+            average_value: scaled_average_damage,
+            damage_type: damage.components[i].damage_type.clone(),
+        };
+        scaled_damage.components.push(new_component);
+    }
+
+    scaled_damage
+}
+
+fn scale_first_damage_component(damage: &Damage, scaled_total: f64) -> Damage {
+    assert!(scaled_total > 0.0);
+    assert!(!damage.components.is_empty());
+
+    let current_total = damage.total_average_value();
+    let delta = scaled_total - current_total;
+
+    assert!(damage.components[0].average_value + delta > 0.0);
+
+    let mut scaled_damage = damage.clone();
+    scaled_damage.components[0].average_value += delta;
+
+    scaled_damage
+}
+
+// Only scale the first component if possible and leave the others untouched.
+// Typically this means scaling the main physical damage and not touching the extra
+// elemental damage. If we scale down so much that the first component goes to zero,
+// scale every component proportionally instead.
+pub fn scale_damage_components(damage: &Damage, scaled_total: f64) -> Damage {
+    let current_total = damage.total_average_value();
+    let delta = scaled_total - current_total;
+
+    if damage.components.len() >= 2 && damage.components[0].average_value + delta <= 0.0 {
+        logging::log(
+            LogLevel::Info,
+            "damage was greatly decreased: scaling all damage components proportionally",
+        );
+
+        scale_all_damage_components(damage, scaled_total)
+    } else {
+        scale_first_damage_component(damage, scaled_total)
+    }
+}
+
+pub fn scale_statistic(levels: Levels, stat: Statistic) -> ScaleResult {
+    let table = tables::get_table_for_statistic(stat.kind);
+
+    scale_by_table(levels, stat, table)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::scaling::ScaleMethod;
+    use crate::statistic::StatType;
+    use crate::tables::Proficiency;
+    use crate::utils::float_eq;
 
     #[test]
     fn test_interpolate() {
@@ -187,5 +260,159 @@ mod tests {
 
         assert!(float_eq(extrapolate(-4.0, -8.0, -1.0), -5.0));
         assert!(float_eq(extrapolate(-4.0, -8.0, -7.0), -11.0));
+    }
+
+    #[test]
+    fn test_scale_all_damage_components() {
+        let mut damage = Damage::new();
+
+        let first = DamageComponent {
+            average_value: 15.0,
+            damage_type: String::from("bludgeoning"),
+        };
+        damage.components.push(first);
+
+        let target_total = 12.0;
+        let scaled = scale_all_damage_components(&damage, target_total);
+        assert!(float_eq(scaled.total_average_value(), target_total));
+        assert!(float_eq(scaled.components[0].average_value, 12.0));
+
+        let second = DamageComponent {
+            average_value: 5.0,
+            damage_type: String::from("fire"),
+        };
+        damage.components.push(second);
+
+        let third = DamageComponent {
+            average_value: 1.0,
+            damage_type: String::from("void"),
+        };
+        damage.components.push(third);
+
+        let scaled = scale_all_damage_components(&damage, target_total);
+        assert!(float_eq(scaled.total_average_value(), target_total));
+        assert!(float_eq(scaled.components[0].average_value, 8.5714285));
+        assert!(float_eq(scaled.components[1].average_value, 2.8571428));
+        assert!(float_eq(scaled.components[2].average_value, 0.5714285));
+    }
+
+    #[test]
+    fn test_scale_first_damage_component() {
+        let mut damage = Damage::new();
+
+        let first = DamageComponent {
+            average_value: 15.0,
+            damage_type: String::from("bludgeoning"),
+        };
+        damage.components.push(first);
+
+        let target_total = 12.0;
+        let scaled = scale_first_damage_component(&damage, target_total);
+        assert!(float_eq(scaled.total_average_value(), target_total));
+        assert!(float_eq(scaled.components[0].average_value, 12.0));
+
+        let second = DamageComponent {
+            average_value: 5.0,
+            damage_type: String::from("fire"),
+        };
+        damage.components.push(second);
+
+        let third = DamageComponent {
+            average_value: 1.0,
+            damage_type: String::from("void"),
+        };
+        damage.components.push(third);
+
+        let scaled = scale_first_damage_component(&damage, target_total);
+        assert!(float_eq(scaled.total_average_value(), target_total));
+        assert!(float_eq(scaled.components[0].average_value, 6.0));
+        assert!(float_eq(scaled.components[1].average_value, 5.0));
+        assert!(float_eq(scaled.components[2].average_value, 1.0));
+    }
+
+    #[test]
+    fn armor_class_exact_scale() {
+        let levels = Levels::new(4, 17).unwrap();
+        let stat = Statistic::new(StatType::ArmorClass, 21.0);
+
+        let result = scale_statistic(levels, stat);
+
+        assert_eq!(result.stat.kind, StatType::ArmorClass);
+        assert!(float_eq(result.stat.value, 40.0));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn armor_class_interpolate() {
+        let levels = Levels::new(11, 2).unwrap();
+        let stat = Statistic::new(StatType::ArmorClass, 32.0);
+
+        let result = scale_statistic(levels, stat);
+
+        assert_eq!(result.stat.kind, StatType::ArmorClass);
+        assert!(float_eq(result.stat.value, 19.0));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Interpolated);
+
+        let stat = Statistic::new(StatType::ArmorClass, 33.0);
+        let result = scale_statistic(levels, stat);
+
+        assert_eq!(result.stat.kind, StatType::ArmorClass);
+        assert!(float_eq(result.stat.value, 20.0));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Interpolated);
+    }
+
+    #[test]
+    fn armor_class_extrapolate() {
+        let levels = Levels::new(5, 9).unwrap();
+        let stat = Statistic::new(StatType::ArmorClass, 17.0);
+
+        let result = scale_statistic(levels, stat);
+
+        assert_eq!(result.stat.kind, StatType::ArmorClass);
+        assert!(float_eq(result.stat.value, 23.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Extrapolated);
+    }
+
+    #[test]
+    fn strike_damage_exact_scale() {
+        let levels = Levels::new(8, 13).unwrap();
+        let stat = Statistic::new(StatType::StrikeDamage, 22.0);
+
+        let result = scale_statistic(levels, stat);
+
+        assert_eq!(result.stat.kind, StatType::StrikeDamage);
+        assert!(float_eq(result.stat.value, 32.5));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn strike_damage_interpolate() {
+        let levels = Levels::new(14, 6).unwrap();
+        let stat = Statistic::new(StatType::StrikeDamage, 30.5);
+
+        let result = scale_statistic(levels, stat);
+
+        assert_eq!(result.stat.kind, StatType::StrikeDamage);
+        assert!(float_eq(result.stat.value, 16.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
+        assert_eq!(result.method, ScaleMethod::Interpolated);
+    }
+
+    #[test]
+    fn strike_damage_extrapolate() {
+        let levels = Levels::new(18, 24).unwrap();
+        let stat = Statistic::new(StatType::StrikeDamage, 57.0);
+
+        let result = scale_statistic(levels, stat);
+
+        assert_eq!(result.stat.kind, StatType::StrikeDamage);
+        assert!(float_eq(result.stat.value, 71.5));
+        assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Extrapolated);
     }
 }

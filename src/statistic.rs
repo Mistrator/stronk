@@ -3,12 +3,14 @@ use std::fmt;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum StatType {
     ArmorClass,
+    StrikeDamage,
 }
 
 impl fmt::Display for StatType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             StatType::ArmorClass => "AC",
+            StatType::StrikeDamage => "damage",
         };
 
         write!(f, "{}", s)

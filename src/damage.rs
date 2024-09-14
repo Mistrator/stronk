@@ -1,12 +1,12 @@
 use crate::logging::{self, LogLevel};
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DamageComponent {
     pub average_value: f64,
     pub damage_type: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Damage {
     pub components: Vec<DamageComponent>,
 }
@@ -94,7 +94,7 @@ fn parse_flat_modifier(modifier: &str) -> Option<f64> {
     Some(parsed)
 }
 
-fn parse_damage_expression(expression: &str) -> Option<f64> {
+pub fn parse_damage_expression(expression: &str) -> Option<f64> {
     let parts: Vec<&str> = expression.split('+').collect();
 
     let mut total_avg_damage = 0.0;

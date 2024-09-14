@@ -1,3 +1,4 @@
+use crate::damage;
 use crate::statistic::StatType;
 use std::fmt;
 
@@ -32,6 +33,7 @@ pub struct StatTable {
 pub fn get_table_for_statistic(stat: StatType) -> StatTable {
     match stat {
         StatType::ArmorClass => armor_class(),
+        StatType::StrikeDamage => strike_damage(),
     }
 }
 
@@ -42,6 +44,22 @@ fn to_float(table: Vec<Vec<i32>>) -> Vec<Vec<f64>> {
         let mut r: Vec<f64> = Vec::new();
         for x in row {
             r.push(x.into());
+        }
+        v.push(r);
+    }
+
+    v
+}
+
+fn to_average_damage(table: Vec<Vec<&str>>) -> Vec<Vec<f64>> {
+    let mut v: Vec<Vec<f64>> = Vec::new();
+
+    for row in table {
+        let mut r: Vec<f64> = Vec::new();
+        for x in row {
+            let average_damage = damage::parse_damage_expression(x)
+                .expect("tables should only have valid damage expressions");
+            r.push(average_damage);
         }
         v.push(r);
     }
@@ -93,6 +111,50 @@ fn armor_class() -> StatTable {
     }
 }
 
+fn strike_damage() -> StatTable {
+    let values = vec![
+        vec!["1d4", "1d4", "1d4+1", "1d6+1"],
+        vec!["1d4+1", "1d4+2", "1d6+2", "1d6+3"],
+        vec!["1d4+2", "1d6+2", "1d6+3", "1d8+4"],
+        vec!["1d6+3", "1d8+4", "1d10+4", "1d12+4"],
+        vec!["1d6+5", "1d8+6", "1d10+6", "1d12+8"],
+        vec!["2d4+4", "2d6+5", "2d8+5", "2d10+7"],
+        vec!["2d4+6", "2d6+6", "2d8+7", "2d12+7"],
+        vec!["2d4+7", "2d6+8", "2d8+9", "2d12+10"],
+        vec!["2d6+6", "2d8+8", "2d10+9", "2d12+12"],
+        vec!["2d6+8", "2d8+9", "2d10+11", "2d12+15"],
+        vec!["2d6+9", "2d8+11", "2d10+13", "2d12+17"],
+        vec!["2d6+10", "2d10+11", "2d12+13", "2d12+20"],
+        vec!["2d8+10", "2d10+12", "2d12+15", "2d12+22"],
+        vec!["3d6+10", "3d8+12", "3d10+14", "3d12+19"],
+        vec!["3d6+11", "3d8+14", "3d10+16", "3d12+21"],
+        vec!["3d6+13", "3d8+15", "3d10+18", "3d12+24"],
+        vec!["3d6+14", "3d10+14", "3d12+17", "3d12+26"],
+        vec!["3d6+15", "3d10+15", "3d12+18", "3d12+29"],
+        vec!["3d6+16", "3d10+16", "3d12+19", "3d12+31"],
+        vec!["3d6+17", "3d10+17", "3d12+20", "3d12+34"],
+        vec!["4d6+14", "4d8+17", "4d10+20", "4d12+29"],
+        vec!["4d6+15", "4d8+19", "4d10+22", "4d12+32"],
+        vec!["4d6+17", "4d8+20", "4d10+24", "4d12+34"],
+        vec!["4d6+18", "4d8+22", "4d10+26", "4d12+37"],
+        vec!["4d6+19", "4d10+20", "4d12+24", "4d12+39"],
+        vec!["4d6+21", "4d10+22", "4d12+26", "4d12+42"],
+    ];
+    let values = to_average_damage(values);
+
+    let proficiencies = vec![
+        Proficiency::Low,
+        Proficiency::Moderate,
+        Proficiency::High,
+        Proficiency::Extreme,
+    ];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,11 +169,10 @@ mod tests {
             assert_eq!(row.len(), columns);
         }
 
-        // Values increase when proficiency increases and don't decrease
-        // when level increases.
+        // Values don't decrease when proficiency or level increases.
         for i in 0..levels::num_levels() - 1 {
             for j in 0..columns - 1 {
-                assert!(table.values[i][j] < table.values[i][j + 1]);
+                assert!(table.values[i][j] <= table.values[i][j + 1]);
                 assert!(table.values[i][j] <= table.values[i + 1][j]);
             }
         }
@@ -128,5 +189,11 @@ mod tests {
     fn validate_armor_class_table() {
         let ac = armor_class();
         validate_table(ac);
+    }
+
+    #[test]
+    fn validate_strike_damage_table() {
+        let dmg = strike_damage();
+        validate_table(dmg);
     }
 }

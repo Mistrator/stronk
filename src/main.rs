@@ -1,9 +1,10 @@
 use std::env;
 use std::io;
 use std::process;
+use stronk::damage::{self, Damage};
 use stronk::levels::Levels;
 use stronk::logging::{self, LogLevel};
-use stronk::scaling::ScaleResult;
+use stronk::scaling::{self, ScaleResult};
 use stronk::statistic::{StatType, Statistic};
 
 fn print_usage() {
@@ -43,6 +44,7 @@ fn parse_args(args: &Vec<&str>) -> Option<Levels> {
 fn parse_stat_kind(kind: &str) -> Option<StatType> {
     match kind {
         "ac" => Some(StatType::ArmorClass),
+        "damage" | "dmg" => Some(StatType::StrikeDamage),
         _ => {
             logging::log(LogLevel::Error, format!("unknown statistic: {}", kind));
             None
@@ -65,33 +67,64 @@ fn parse_stat_value_integer(kind: StatType, value: &str) -> Option<f64> {
     }
 }
 
-fn parse_stat_value(kind: StatType, value: &str) -> Option<f64> {
-    match kind {
-        StatType::ArmorClass => parse_stat_value_integer(kind, value),
-    }
-}
-
-fn parse_prompt(prompt: &str) -> Option<Statistic> {
-    // We must assign String created by to_lowercase() to its own variable,
+fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
+    // We must assign the String created by to_lowercase() to its own variable,
     // or it becomes a temporary that is then dropped too early.
     let prompt: String = prompt.trim().to_lowercase();
-    let prompt: Vec<&str> = prompt.split_whitespace().collect();
+    let prompt = match prompt.split_once(' ') {
+        Some(p) => p,
+        None => {
+            logging::log(LogLevel::Error, "invalid prompt");
+            logging::log(LogLevel::Info, "usage: <statistic> <current_value>");
+            return None;
+        }
+    };
+    let prompt_kind = prompt.0.trim();
+    let prompt_value = prompt.1.trim();
 
-    if prompt.len() != 2 {
-        logging::log(LogLevel::Error, "invalid prompt");
-        logging::log(LogLevel::Info, "usage: <statistic> <current_value>");
-        return None;
-    }
+    let stat_kind = match parse_stat_kind(prompt_kind) {
+        Some(k) => k,
+        None => {
+            logging::log(
+                LogLevel::Error,
+                format!("invalid prompt: unknown statistic: {}", prompt_kind),
+            );
+            return None;
+        }
+    };
 
-    let kind = parse_stat_kind(prompt[0]);
-    if let Some(k) = kind {
-        let value = parse_stat_value(k, prompt[1]);
-        if let Some(v) = value {
-            return Some(Statistic::new(k, v));
+    match stat_kind {
+        StatType::StrikeDamage => {
+            let damage = match damage::parse_damage(prompt_value) {
+                Some(d) => d,
+                None => {
+                    return None;
+                }
+            };
+
+            let total_damage = Statistic::new(stat_kind, damage.total_average_value());
+            let scale_result = scaling::scale_statistic(levels, total_damage);
+            let scaled_damage = scaling::scale_damage_components(&damage, scale_result.stat.value);
+
+            print_damage(&scaled_damage, scale_result);
+
+            Some(scale_result)
+        }
+        StatType::ArmorClass => {
+            let stat_value = match parse_stat_value_integer(stat_kind, prompt_value) {
+                Some(s) => s,
+                None => {
+                    return None;
+                }
+            };
+
+            let scaled = scaling::scale_statistic(levels, Statistic::new(stat_kind, stat_value));
+
+            print_result(scaled);
+
+            Some(scaled)
         }
     }
-
-    None
 }
 
 fn print_result(result: ScaleResult) {
@@ -99,6 +132,16 @@ fn print_result(result: ScaleResult) {
         "{} {} ({}) ({})",
         result.stat.kind, result.stat.value, result.proficiency, result.method
     );
+}
+
+fn print_damage(damage: &Damage, result: ScaleResult) {
+    print!("{} ", result.stat.kind);
+
+    for component in &damage.components {
+        print!("{} {} ", component.average_value, component.damage_type);
+    }
+
+    println!("({}) ({})", result.proficiency, result.method);
 }
 
 fn main() {
@@ -121,19 +164,16 @@ fn main() {
             .read_line(&mut prompt)
             .expect("failed to read prompt");
 
-        let stat = parse_prompt(&prompt);
-        if stat.is_none() {
-            continue;
-        }
-
-        let scale_result = stronk::scale_statistic(levels, stat.unwrap());
-        print_result(scale_result);
+        handle_prompt(levels, &prompt);
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use stronk::scaling::ScaleMethod;
+    use stronk::tables::Proficiency;
+    use stronk::utils::float_eq;
 
     #[test]
     fn accept_valid_args() {
@@ -161,28 +201,55 @@ mod tests {
         assert!(parse_args(&vec!["", "1", "2", "3"]).is_none());
     }
 
+    #[rustfmt::skip]
     #[test]
-    fn accept_valid_prompt() {
-        let statistic = parse_prompt("ac 12").unwrap();
-        assert!(statistic.kind == StatType::ArmorClass);
-        assert!(statistic.value == 12.0);
+    fn accept_valid_prompt_syntax() {
+        let levels = Levels::new(1, 2).unwrap();
 
-        assert!(parse_prompt("AC 12").is_some());
-        assert!(parse_prompt("   ac   12    ").is_some());
-        assert!(parse_prompt("ac 0").is_some());
-        assert!(parse_prompt("ac -1").is_some());
-        assert!(parse_prompt("ac -34").is_some());
+        assert!(handle_prompt(levels, "ac 12").is_some());
+        assert!(handle_prompt(levels, "AC 12").is_some());
+        assert!(handle_prompt(levels, "   ac   12    ").is_some());
+        assert!(handle_prompt(levels, "AC 120").is_some());
+        assert!(handle_prompt(levels, "ac 0").is_some());
+        assert!(handle_prompt(levels, "ac -1").is_some());
+        assert!(handle_prompt(levels, "ac -34").is_some());
+
+        assert!(handle_prompt(levels, "damage 2d12+11 bludgeoning").is_some());
+        assert!(handle_prompt(levels, "damage 3d10 + 17 slashing plus 2d6+6 cold plus 1d4 acid plus 2 vitality").is_some());
     }
 
     #[test]
-    fn reject_invalid_prompt() {
-        assert!(parse_prompt("").is_none());
-        assert!(parse_prompt("ac").is_none());
-        assert!(parse_prompt("invalid").is_none());
-        assert!(parse_prompt("ac x").is_none());
-        assert!(parse_prompt("invalid 12").is_none());
-        assert!(parse_prompt("invalid x").is_none());
-        assert!(parse_prompt("ac 12 34").is_none());
-        assert!(parse_prompt("ac 12.34").is_none());
+    fn reject_invalid_prompt_syntax() {
+        let levels = Levels::new(1, 2).unwrap();
+
+        assert!(handle_prompt(levels, "").is_none());
+        assert!(handle_prompt(levels, "ac").is_none());
+        assert!(handle_prompt(levels, "invalid").is_none());
+        assert!(handle_prompt(levels, "ac x").is_none());
+        assert!(handle_prompt(levels, "invalid 12").is_none());
+        assert!(handle_prompt(levels, "invalid x").is_none());
+        assert!(handle_prompt(levels, "ac 12 34").is_none());
+        assert!(handle_prompt(levels, "ac 12.34").is_none());
+
+        assert!(handle_prompt(levels, "ac 2d6+1 fire").is_none());
+        assert!(handle_prompt(levels, "damage 1d4+1").is_none());
+        assert!(handle_prompt(levels, "1d6+2").is_none());
+    }
+
+    #[test]
+    fn validate_scaling_results() {
+        let levels = Levels::new(3, 14).unwrap();
+
+        let result = handle_prompt(levels, "ac 18").unwrap();
+        assert_eq!(result.stat.kind, StatType::ArmorClass);
+        assert!(float_eq(result.stat.value, 35.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "damage 1d12+8 piercing").unwrap();
+        assert_eq!(result.stat.kind, StatType::StrikeDamage);
+        assert!(float_eq(result.stat.value, 43.5));
+        assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Exact);
     }
 }
