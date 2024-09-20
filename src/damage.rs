@@ -1,4 +1,6 @@
 use crate::logging::{self, LogLevel};
+use crate::tables::Proficiency;
+use std::cmp::Ordering;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct DamageComponent {
@@ -164,6 +166,106 @@ pub fn parse_damage(expression: &str) -> Option<Damage> {
     Some(result)
 }
 
+struct ExpressionCandidate {
+    pub target_damage_delta: f64,
+    pub dice_flat_mod_delta: f64,
+    pub die_size_preference: usize,
+    pub expression: String,
+}
+
+fn compare_expressions(a: &ExpressionCandidate, b: &ExpressionCandidate) -> Ordering {
+    let target_dmg = a.target_damage_delta.total_cmp(&b.target_damage_delta);
+    let dice_mod = a.dice_flat_mod_delta.total_cmp(&b.dice_flat_mod_delta);
+    let die_pref = a.die_size_preference.cmp(&b.die_size_preference);
+
+    match target_dmg {
+        Ordering::Equal => match dice_mod {
+            Ordering::Equal => die_pref,
+            _ => dice_mod,
+        },
+        _ => target_dmg,
+    }
+}
+
+fn get_damage_expression_candidates(
+    average_damage: f64,
+    available_dice: &[i32],
+) -> Vec<ExpressionCandidate> {
+    let mut solutions: Vec<ExpressionCandidate> = Vec::new();
+
+    for (i, die_size) in available_dice.iter().enumerate() {
+        for n_dice in 1..=4 {
+            let ds: f64 = (*die_size).into();
+            let nd: f64 = n_dice.into();
+
+            assert_eq!(die_size % 2, 0);
+            let dice_avg = nd * (ds / 2.0 + 0.5);
+
+            if dice_avg > average_damage {
+                continue;
+            }
+
+            let flat_modifier = (average_damage - dice_avg).floor();
+            let target_damage_delta = average_damage - dice_avg - flat_modifier;
+            let dice_flat_mod_delta = (flat_modifier - dice_avg).abs();
+
+            // We never want to exceed the expected damage.
+            assert!(dice_avg + flat_modifier <= average_damage);
+
+            let expression: String = if flat_modifier > 0.0 {
+                format!("{}d{}+{}", n_dice, die_size, flat_modifier)
+            } else {
+                format!("{}d{}", n_dice, die_size)
+            };
+
+            let candidate = ExpressionCandidate {
+                target_damage_delta,
+                dice_flat_mod_delta,
+                die_size_preference: i,
+                expression,
+            };
+
+            solutions.push(candidate);
+        }
+    }
+
+    solutions
+}
+
+pub fn build_damage_expression(average_damage: f64, proficiency: Proficiency) -> String {
+    assert!(average_damage > 0.0);
+
+    // The dice most suitable for a given proficiency. Use the first one if possible,
+    // but if a less preferred one gives a more accurate damage expression, use it.
+    let dice_preference = match proficiency {
+        Proficiency::Extreme => vec![12, 10],
+        Proficiency::High => vec![10, 12, 8],
+        Proficiency::Moderate => vec![8, 10, 6],
+        Proficiency::Low => vec![4, 6],
+        Proficiency::Terrible => panic!("no terrible strike proficiency"),
+    };
+
+    let mut solutions = get_damage_expression_candidates(average_damage, &dice_preference);
+
+    // No solutions with preferred dice, try all dice options. This happens if
+    // our target damage is smaller than the average value of the preferred dice.
+    if solutions.is_empty() {
+        let all_dice = vec![12, 10, 8, 6, 4];
+        solutions = get_damage_expression_candidates(average_damage, &all_dice);
+    }
+
+    // No solutions with any dice, return a flat damage number. This happens if
+    // our target damage is smaller than the average of d4.
+    if solutions.is_empty() {
+        let constant_dmg = average_damage.floor();
+        return format!("{}", constant_dmg);
+    }
+
+    solutions.sort_by(compare_expressions);
+
+    solutions[0].expression.clone()
+}
+
 #[rustfmt::skip]
 #[cfg(test)]
 mod tests {
@@ -307,5 +409,28 @@ mod tests {
         assert_eq!(parse_damage("plus 1d4 piercing"), None);
         assert_eq!(parse_damage("2d6+5 piercing plus 1d6 persistent fire"), None);
         assert_eq!(parse_damage("2d8+9 piercing + 1d10 cold"), None);
+    }
+
+    #[test]
+    fn test_damage_expression_builder_correctness() {
+        let proficiencies = vec![
+            Proficiency::Low,
+            Proficiency::Moderate,
+            Proficiency::High,
+            Proficiency::Extreme,
+        ];
+
+        for prof in &proficiencies {
+            let mut average_damage = 1.0;
+            while average_damage <= 75.0 {
+                let expression = build_damage_expression(average_damage, *prof);
+                let parsed = parse_damage_expression(&expression)
+                    .expect("the generated expression should always be valid");
+
+                assert!((parsed - average_damage).abs() < 1.0 - 1e-6);
+
+                average_damage += 0.25;
+            }
+        }
     }
 }
