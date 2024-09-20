@@ -129,7 +129,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
 
 fn print_result(result: ScaleResult) {
     println!(
-        "{} {} ({}) ({})",
+        "{} {} [{}, {}]",
         result.stat.kind, result.stat.value, result.proficiency, result.method
     );
 }
@@ -137,11 +137,22 @@ fn print_result(result: ScaleResult) {
 fn print_damage(damage: &Damage, result: ScaleResult) {
     print!("{} ", result.stat.kind);
 
-    for component in &damage.components {
-        print!("{} {} ", component.average_value, component.damage_type);
+    for (i, component) in damage.components.iter().enumerate() {
+        #[rustfmt::skip]
+        let damage_expression = damage::build_damage_expression(component.average_value, result.proficiency);
+
+        print!(
+            "{} ({:.1}) {} ",
+            damage_expression, component.average_value, component.damage_type
+        );
+
+        let n = damage.components.len();
+        if n > 1 && i != n - 1 {
+            print!("plus ");
+        }
     }
 
-    println!("({}) ({})", result.proficiency, result.method);
+    println!("[{}, {}]", result.proficiency, result.method);
 }
 
 fn main() {
