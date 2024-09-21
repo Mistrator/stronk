@@ -44,6 +44,7 @@ fn parse_args(args: &Vec<&str>) -> Option<Levels> {
 fn parse_stat_kind(kind: &str) -> Option<StatType> {
     match kind {
         "ac" => Some(StatType::ArmorClass),
+        "attack" | "att" => Some(StatType::StrikeAttackBonus),
         "damage" | "dmg" => Some(StatType::StrikeDamage),
         _ => {
             logging::log(LogLevel::Error, format!("unknown statistic: {}", kind));
@@ -110,7 +111,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
 
             Some(scale_result)
         }
-        StatType::ArmorClass => {
+        StatType::ArmorClass | StatType::StrikeAttackBonus => {
             let stat_value = match parse_stat_value_integer(stat_kind, prompt_value) {
                 Some(s) => s,
                 None => {
@@ -248,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_scaling_results() {
+    fn scale_armor_class() {
         let levels = Levels::new(3, 14).unwrap();
 
         let result = handle_prompt(levels, "ac 18").unwrap();
@@ -256,10 +257,26 @@ mod tests {
         assert!(float_eq(result.stat.value, 35.0));
         assert_eq!(result.proficiency, Proficiency::Moderate);
         assert_eq!(result.method, ScaleMethod::Exact);
+    }
 
-        let result = handle_prompt(levels, "damage 1d12+8 piercing").unwrap();
+    #[test]
+    fn scale_strike_attack_bonus() {
+        let levels = Levels::new(11, 19).unwrap();
+
+        let result = handle_prompt(levels, "attack +24").unwrap();
+        assert_eq!(result.stat.kind, StatType::StrikeAttackBonus);
+        assert!(float_eq(result.stat.value, 36.0));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_strike_damage() {
+        let levels = Levels::new(7, 17).unwrap();
+
+        let result = handle_prompt(levels, "damage 2d12+12 piercing").unwrap();
         assert_eq!(result.stat.kind, StatType::StrikeDamage);
-        assert!(float_eq(result.stat.value, 43.5));
+        assert!(float_eq(result.stat.value, 50.5));
         assert_eq!(result.proficiency, Proficiency::Extreme);
         assert_eq!(result.method, ScaleMethod::Exact);
     }

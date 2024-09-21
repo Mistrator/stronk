@@ -33,6 +33,7 @@ pub struct StatTable {
 pub fn get_table_for_statistic(stat: StatType) -> StatTable {
     match stat {
         StatType::ArmorClass => armor_class(),
+        StatType::StrikeAttackBonus => strike_attack_bonus(),
         StatType::StrikeDamage => strike_damage(),
     }
 }
@@ -95,6 +96,50 @@ fn armor_class() -> StatTable {
         vec![45, 47, 48, 51],
         vec![46, 48, 49, 52],
         vec![48, 50, 51, 54],
+    ];
+    let values = to_float(values);
+
+    let proficiencies = vec![
+        Proficiency::Low,
+        Proficiency::Moderate,
+        Proficiency::High,
+        Proficiency::Extreme,
+    ];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
+}
+
+fn strike_attack_bonus() -> StatTable {
+    let values = vec![
+        vec![4, 6, 8, 10],
+        vec![4, 6, 8, 10],
+        vec![5, 7, 9, 11],
+        vec![7, 9, 11, 13],
+        vec![8, 10, 12, 14],
+        vec![9, 12, 14, 16],
+        vec![11, 13, 15, 17],
+        vec![12, 15, 17, 19],
+        vec![13, 16, 18, 20],
+        vec![15, 18, 20, 22],
+        vec![16, 19, 21, 23],
+        vec![17, 21, 23, 25],
+        vec![19, 22, 24, 27],
+        vec![20, 24, 26, 28],
+        vec![21, 25, 27, 29],
+        vec![23, 27, 29, 31],
+        vec![24, 28, 30, 32],
+        vec![25, 30, 32, 34],
+        vec![27, 31, 33, 35],
+        vec![28, 33, 35, 37],
+        vec![29, 34, 36, 38],
+        vec![31, 36, 38, 40],
+        vec![32, 37, 39, 41],
+        vec![33, 39, 41, 43],
+        vec![35, 40, 42, 44],
+        vec![36, 42, 44, 46],
     ];
     let values = to_float(values);
 
@@ -189,6 +234,12 @@ mod tests {
     fn validate_armor_class_table() {
         let ac = armor_class();
         validate_table(ac);
+    }
+
+    #[test]
+    fn validate_strike_attack_bonus_table() {
+        let bonus = strike_attack_bonus();
+        validate_table(bonus);
     }
 
     #[test]
