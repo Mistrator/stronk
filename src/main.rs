@@ -46,6 +46,7 @@ fn parse_stat_kind(kind: &str) -> Option<StatType> {
         "ac" => Some(StatType::ArmorClass),
         "attack" | "att" => Some(StatType::StrikeAttackBonus),
         "damage" | "dmg" => Some(StatType::StrikeDamage),
+        "spell-attack" => Some(StatType::SpellAttackBonus),
         _ => {
             logging::log(LogLevel::Error, format!("unknown statistic: {}", kind));
             None
@@ -111,7 +112,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
 
             Some(scale_result)
         }
-        StatType::ArmorClass | StatType::StrikeAttackBonus => {
+        StatType::ArmorClass | StatType::StrikeAttackBonus | StatType::SpellAttackBonus => {
             let stat_value = match parse_stat_value_integer(stat_kind, prompt_value) {
                 Some(s) => s,
                 None => {
@@ -278,6 +279,17 @@ mod tests {
         assert_eq!(result.stat.kind, StatType::StrikeDamage);
         assert!(float_eq(result.stat.value, 50.5));
         assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_spell_attack_bonus() {
+        let levels = Levels::new(12, 5).unwrap();
+
+        let result = handle_prompt(levels, "spell-attack +21").unwrap();
+        assert_eq!(result.stat.kind, StatType::SpellAttackBonus);
+        assert!(float_eq(result.stat.value, 11.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
         assert_eq!(result.method, ScaleMethod::Exact);
     }
 }

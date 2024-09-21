@@ -5,6 +5,7 @@ pub enum StatType {
     ArmorClass,
     StrikeAttackBonus,
     StrikeDamage,
+    SpellAttackBonus,
 }
 
 impl fmt::Display for StatType {
@@ -13,6 +14,7 @@ impl fmt::Display for StatType {
             StatType::ArmorClass => "AC",
             StatType::StrikeAttackBonus => "attack",
             StatType::StrikeDamage => "damage",
+            StatType::SpellAttackBonus => "spell-attack",
         };
 
         write!(f, "{}", s)

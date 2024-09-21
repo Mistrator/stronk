@@ -35,6 +35,7 @@ pub fn get_table_for_statistic(stat: StatType) -> StatTable {
         StatType::ArmorClass => armor_class(),
         StatType::StrikeAttackBonus => strike_attack_bonus(),
         StatType::StrikeDamage => strike_damage(),
+        StatType::SpellAttackBonus => spell_attack_bonus(),
     }
 }
 
@@ -200,6 +201,49 @@ fn strike_damage() -> StatTable {
     }
 }
 
+fn spell_attack_bonus() -> StatTable {
+    let values = vec![
+        vec![5, 8, 11],
+        vec![5, 8, 11],
+        vec![6, 9, 12],
+        vec![7, 10, 14],
+        vec![9, 12, 15],
+        vec![10, 13, 17],
+        vec![11, 14, 18],
+        vec![13, 16, 19],
+        vec![14, 17, 21],
+        vec![15, 18, 22],
+        vec![17, 20, 24],
+        vec![18, 21, 25],
+        vec![19, 22, 26],
+        vec![21, 24, 28],
+        vec![22, 25, 29],
+        vec![23, 26, 31],
+        vec![25, 28, 32],
+        vec![26, 29, 33],
+        vec![27, 30, 35],
+        vec![29, 32, 36],
+        vec![30, 33, 38],
+        vec![31, 34, 39],
+        vec![33, 36, 40],
+        vec![34, 37, 42],
+        vec![35, 38, 43],
+        vec![37, 40, 44],
+    ];
+    let values = to_float(values);
+
+    let proficiencies = vec![
+        Proficiency::Moderate,
+        Proficiency::High,
+        Proficiency::Extreme,
+    ];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -246,5 +290,11 @@ mod tests {
     fn validate_strike_damage_table() {
         let dmg = strike_damage();
         validate_table(dmg);
+    }
+
+    #[test]
+    fn validate_spell_attack_bonus_table() {
+        let bonus = spell_attack_bonus();
+        validate_table(bonus);
     }
 }
