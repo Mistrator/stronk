@@ -2,6 +2,7 @@ use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum StatType {
+    Perception,
     ArmorClass,
     StrikeAttackBonus,
     StrikeDamage,
@@ -11,6 +12,7 @@ pub enum StatType {
 impl fmt::Display for StatType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
+            StatType::Perception => "perception",
             StatType::ArmorClass => "AC",
             StatType::StrikeAttackBonus => "attack",
             StatType::StrikeDamage => "damage",

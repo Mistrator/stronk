@@ -43,6 +43,7 @@ fn parse_args(args: &Vec<&str>) -> Option<Levels> {
 
 fn parse_stat_kind(kind: &str) -> Option<StatType> {
     match kind {
+        "perception" | "per" => Some(StatType::Perception),
         "ac" => Some(StatType::ArmorClass),
         "attack" | "att" => Some(StatType::StrikeAttackBonus),
         "damage" | "dmg" => Some(StatType::StrikeDamage),
@@ -112,7 +113,10 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
 
             Some(scale_result)
         }
-        StatType::ArmorClass | StatType::StrikeAttackBonus | StatType::SpellAttackBonus => {
+        StatType::Perception
+        | StatType::ArmorClass
+        | StatType::StrikeAttackBonus
+        | StatType::SpellAttackBonus => {
             let stat_value = match parse_stat_value_integer(stat_kind, prompt_value) {
                 Some(s) => s,
                 None => {
@@ -247,6 +251,17 @@ mod tests {
         assert!(handle_prompt(levels, "ac 2d6+1 fire").is_none());
         assert!(handle_prompt(levels, "damage 1d4+1").is_none());
         assert!(handle_prompt(levels, "1d6+2").is_none());
+    }
+
+    #[test]
+    fn scale_perception() {
+        let levels = Levels::new(19, 15).unwrap();
+
+        let result = handle_prompt(levels, "perception +29").unwrap();
+        assert_eq!(result.stat.kind, StatType::Perception);
+        assert!(float_eq(result.stat.value, 23.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
     }
 
     #[test]

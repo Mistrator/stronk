@@ -32,6 +32,7 @@ pub struct StatTable {
 
 pub fn get_table_for_statistic(stat: StatType) -> StatTable {
     match stat {
+        StatType::Perception => perception(),
         StatType::ArmorClass => armor_class(),
         StatType::StrikeAttackBonus => strike_attack_bonus(),
         StatType::StrikeDamage => strike_damage(),
@@ -67,6 +68,52 @@ fn to_average_damage(table: Vec<Vec<&str>>) -> Vec<Vec<f64>> {
     }
 
     v
+}
+
+fn perception() -> StatTable {
+    let values = vec![
+        vec![0, 2, 5, 8, 9],
+        vec![1, 3, 6, 9, 10],
+        vec![2, 4, 7, 10, 11],
+        vec![3, 5, 8, 11, 12],
+        vec![4, 6, 9, 12, 14],
+        vec![6, 8, 11, 14, 15],
+        vec![7, 9, 12, 15, 17],
+        vec![8, 11, 14, 17, 18],
+        vec![10, 12, 15, 18, 20],
+        vec![11, 13, 16, 19, 21],
+        vec![12, 15, 18, 21, 23],
+        vec![14, 16, 19, 22, 24],
+        vec![15, 18, 21, 24, 26],
+        vec![16, 19, 22, 25, 27],
+        vec![18, 20, 23, 26, 29],
+        vec![19, 22, 25, 28, 30],
+        vec![20, 23, 26, 29, 32],
+        vec![22, 25, 28, 30, 33],
+        vec![23, 26, 29, 32, 35],
+        vec![24, 27, 30, 33, 36],
+        vec![26, 29, 32, 35, 38],
+        vec![27, 30, 33, 36, 39],
+        vec![28, 32, 35, 38, 41],
+        vec![30, 33, 36, 39, 43],
+        vec![31, 34, 37, 40, 44],
+        vec![32, 36, 38, 42, 46],
+    ];
+
+    let values = to_float(values);
+
+    let proficiencies = vec![
+        Proficiency::Terrible,
+        Proficiency::Low,
+        Proficiency::Moderate,
+        Proficiency::High,
+        Proficiency::Extreme,
+    ];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
 }
 
 fn armor_class() -> StatTable {
@@ -275,26 +322,32 @@ mod tests {
     }
 
     #[test]
+    fn validate_perception_table() {
+        let table = perception();
+        validate_table(table);
+    }
+
+    #[test]
     fn validate_armor_class_table() {
-        let ac = armor_class();
-        validate_table(ac);
+        let table = armor_class();
+        validate_table(table);
     }
 
     #[test]
     fn validate_strike_attack_bonus_table() {
-        let bonus = strike_attack_bonus();
-        validate_table(bonus);
+        let table = strike_attack_bonus();
+        validate_table(table);
     }
 
     #[test]
     fn validate_strike_damage_table() {
-        let dmg = strike_damage();
-        validate_table(dmg);
+        let table = strike_damage();
+        validate_table(table);
     }
 
     #[test]
     fn validate_spell_attack_bonus_table() {
-        let bonus = spell_attack_bonus();
-        validate_table(bonus);
+        let table = spell_attack_bonus();
+        validate_table(table);
     }
 }
