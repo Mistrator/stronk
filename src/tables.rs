@@ -36,6 +36,7 @@ pub fn get_table_for_statistic(stat: StatType) -> StatTable {
         StatType::Skill => skills(),
         StatType::ArmorClass => armor_class(),
         StatType::SavingThrow => saving_throws(),
+        StatType::HitPoints => hit_points(),
         StatType::StrikeAttackBonus => strike_attack_bonus(),
         StatType::StrikeDamage => strike_damage(),
         StatType::SpellAttackBonus => spell_attack_bonus(),
@@ -254,6 +255,52 @@ fn saving_throws() -> StatTable {
     }
 }
 
+fn hit_points() -> StatTable {
+    let values = vec![
+        vec![5, 6, 7, 8, 9, 9],
+        vec![11, 13, 14, 16, 17, 20],
+        vec![14, 16, 19, 21, 24, 26],
+        vec![21, 25, 28, 32, 36, 40],
+        vec![31, 37, 42, 48, 53, 59],
+        vec![42, 48, 57, 63, 72, 78],
+        vec![53, 59, 72, 78, 91, 97],
+        vec![67, 75, 91, 99, 115, 123],
+        vec![82, 90, 111, 119, 140, 148],
+        vec![97, 105, 131, 139, 165, 173],
+        vec![112, 120, 151, 159, 190, 198],
+        vec![127, 135, 171, 179, 215, 223],
+        vec![142, 150, 191, 199, 240, 248],
+        vec![157, 165, 211, 219, 265, 273],
+        vec![172, 180, 231, 239, 290, 298],
+        vec![187, 195, 251, 259, 315, 323],
+        vec![202, 210, 271, 279, 340, 348],
+        vec![217, 225, 291, 299, 365, 373],
+        vec![232, 240, 311, 319, 390, 398],
+        vec![247, 255, 331, 339, 415, 423],
+        vec![262, 270, 351, 359, 440, 448],
+        vec![277, 285, 371, 379, 465, 473],
+        vec![295, 305, 395, 405, 495, 505],
+        vec![317, 329, 424, 436, 532, 544],
+        vec![339, 351, 454, 466, 569, 581],
+        vec![367, 383, 492, 508, 617, 633],
+    ];
+    let values = to_float(values);
+
+    let proficiencies = vec![
+        Proficiency::Low,
+        Proficiency::Low,
+        Proficiency::Moderate,
+        Proficiency::Moderate,
+        Proficiency::High,
+        Proficiency::High,
+    ];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
+}
+
 fn strike_attack_bonus() -> StatTable {
     let values = vec![
         vec![4, 6, 8, 10],
@@ -436,6 +483,12 @@ mod tests {
     #[test]
     fn validate_saving_throws_table() {
         let table = saving_throws();
+        validate_table(table);
+    }
+
+    #[test]
+    fn validate_hit_points_table() {
+        let table = hit_points();
         validate_table(table);
     }
 
