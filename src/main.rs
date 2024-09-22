@@ -44,6 +44,7 @@ fn parse_args(args: &Vec<&str>) -> Option<Levels> {
 fn parse_stat_kind(kind: &str) -> Option<StatType> {
     match kind {
         "perception" | "per" => Some(StatType::Perception),
+        "skill" => Some(StatType::Skill),
         "ac" => Some(StatType::ArmorClass),
         "attack" | "att" => Some(StatType::StrikeAttackBonus),
         "damage" | "dmg" => Some(StatType::StrikeDamage),
@@ -114,6 +115,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
             Some(scale_result)
         }
         StatType::Perception
+        | StatType::Skill
         | StatType::ArmorClass
         | StatType::StrikeAttackBonus
         | StatType::SpellAttackBonus => {
@@ -261,6 +263,17 @@ mod tests {
         assert_eq!(result.stat.kind, StatType::Perception);
         assert!(float_eq(result.stat.value, 23.0));
         assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_skill() {
+        let levels = Levels::new(3, 4).unwrap();
+
+        let result = handle_prompt(levels, "skill +13").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill);
+        assert!(float_eq(result.stat.value, 15.0));
+        assert_eq!(result.proficiency, Proficiency::Extreme);
         assert_eq!(result.method, ScaleMethod::Exact);
     }
 

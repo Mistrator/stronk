@@ -33,6 +33,7 @@ pub struct StatTable {
 pub fn get_table_for_statistic(stat: StatType) -> StatTable {
     match stat {
         StatType::Perception => perception(),
+        StatType::Skill => skills(),
         StatType::ArmorClass => armor_class(),
         StatType::StrikeAttackBonus => strike_attack_bonus(),
         StatType::StrikeDamage => strike_damage(),
@@ -104,6 +105,52 @@ fn perception() -> StatTable {
 
     let proficiencies = vec![
         Proficiency::Terrible,
+        Proficiency::Low,
+        Proficiency::Moderate,
+        Proficiency::High,
+        Proficiency::Extreme,
+    ];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
+}
+
+fn skills() -> StatTable {
+    let values = vec![
+        vec![1, 2, 4, 5, 8],
+        vec![2, 3, 5, 6, 9],
+        vec![3, 4, 6, 7, 10],
+        vec![4, 5, 7, 8, 11],
+        vec![5, 7, 9, 10, 13],
+        vec![7, 8, 10, 12, 15],
+        vec![8, 10, 12, 13, 16],
+        vec![9, 11, 13, 15, 18],
+        vec![11, 13, 15, 17, 20],
+        vec![12, 14, 16, 18, 21],
+        vec![13, 16, 18, 20, 23],
+        vec![15, 17, 19, 22, 25],
+        vec![16, 19, 21, 23, 26],
+        vec![17, 20, 22, 25, 28],
+        vec![19, 22, 24, 27, 30],
+        vec![20, 23, 25, 28, 31],
+        vec![21, 25, 27, 30, 33],
+        vec![23, 26, 28, 32, 35],
+        vec![24, 28, 30, 33, 36],
+        vec![25, 29, 31, 35, 38],
+        vec![27, 31, 33, 37, 40],
+        vec![28, 32, 34, 38, 41],
+        vec![29, 34, 36, 40, 43],
+        vec![31, 35, 37, 42, 45],
+        vec![32, 36, 38, 43, 46],
+        vec![33, 38, 40, 45, 48],
+    ];
+
+    let values = to_float(values);
+
+    let proficiencies = vec![
+        Proficiency::Low,
         Proficiency::Low,
         Proficiency::Moderate,
         Proficiency::High,
@@ -315,15 +362,21 @@ mod tests {
 
         assert_eq!(table.proficiencies.len(), columns);
 
-        // Columns are in ascending proficiency order.
+        // Columns are in non-descending proficiency order.
         for i in 0..columns - 1 {
-            assert!(table.proficiencies[i] < table.proficiencies[i + 1]);
+            assert!(table.proficiencies[i] <= table.proficiencies[i + 1]);
         }
     }
 
     #[test]
     fn validate_perception_table() {
         let table = perception();
+        validate_table(table);
+    }
+
+    #[test]
+    fn validate_skills_table() {
+        let table = skills();
         validate_table(table);
     }
 
