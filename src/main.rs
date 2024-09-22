@@ -46,6 +46,7 @@ fn parse_stat_kind(kind: &str) -> Option<StatType> {
         "perception" | "per" => Some(StatType::Perception),
         "skill" => Some(StatType::Skill),
         "ac" => Some(StatType::ArmorClass),
+        "save" | "fortitude" | "fort" | "reflex" | "ref" | "will" => Some(StatType::SavingThrow),
         "attack" | "att" => Some(StatType::StrikeAttackBonus),
         "damage" | "dmg" => Some(StatType::StrikeDamage),
         "spell-attack" => Some(StatType::SpellAttackBonus),
@@ -117,6 +118,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
         StatType::Perception
         | StatType::Skill
         | StatType::ArmorClass
+        | StatType::SavingThrow
         | StatType::StrikeAttackBonus
         | StatType::SpellAttackBonus => {
             let stat_value = match parse_stat_value_integer(stat_kind, prompt_value) {
@@ -285,6 +287,17 @@ mod tests {
         assert_eq!(result.stat.kind, StatType::ArmorClass);
         assert!(float_eq(result.stat.value, 35.0));
         assert_eq!(result.proficiency, Proficiency::Moderate);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_saving_throw() {
+        let levels = Levels::new(6, 0).unwrap();
+
+        let result = handle_prompt(levels, "save +11").unwrap();
+        assert_eq!(result.stat.kind, StatType::SavingThrow);
+        assert!(float_eq(result.stat.value, 3.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
         assert_eq!(result.method, ScaleMethod::Exact);
     }
 
