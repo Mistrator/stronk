@@ -54,6 +54,8 @@ fn parse_stat_kind(kind: &str) -> Option<StatType> {
         "damage" | "dmg" => Some(StatType::StrikeDamage),
         "spell-dc" => Some(StatType::SpellDC),
         "spell-attack" => Some(StatType::SpellAttackBonus),
+        "unlimited-area-damage" => Some(StatType::UnlimitedAreaDamage),
+        "limited-area-damage" => Some(StatType::LimitedAreaDamage),
         _ => {
             logging::log(LogLevel::Error, format!("unknown statistic: {}", kind));
             None
@@ -103,7 +105,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
     };
 
     match stat_kind {
-        StatType::StrikeDamage => {
+        StatType::StrikeDamage | StatType::UnlimitedAreaDamage | StatType::LimitedAreaDamage => {
             let damage = match damage::parse_damage(prompt_value) {
                 Some(d) => d,
                 None => {
@@ -382,6 +384,28 @@ mod tests {
         let result = handle_prompt(levels, "spell-attack +21").unwrap();
         assert_eq!(result.stat.kind, StatType::SpellAttackBonus);
         assert!(float_eq(result.stat.value, 11.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_unlimited_area_damage() {
+        let levels = Levels::new(6, 14).unwrap();
+
+        let result = handle_prompt(levels, "unlimited-area-damage 4d6 fire").unwrap();
+        assert_eq!(result.stat.kind, StatType::UnlimitedAreaDamage);
+        assert!(float_eq(result.stat.value, 26.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_limited_area_damage() {
+        let levels = Levels::new(17, 12).unwrap();
+
+        let result = handle_prompt(levels, "limited-area-damage 18d6 cold").unwrap();
+        assert_eq!(result.stat.kind, StatType::LimitedAreaDamage);
+        assert!(float_eq(result.stat.value, 46.0));
         assert_eq!(result.proficiency, Proficiency::Moderate);
         assert_eq!(result.method, ScaleMethod::Exact);
     }

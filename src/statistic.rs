@@ -13,6 +13,8 @@ pub enum StatType {
     StrikeDamage,
     SpellDC,
     SpellAttackBonus,
+    UnlimitedAreaDamage,
+    LimitedAreaDamage,
 }
 
 impl fmt::Display for StatType {
@@ -29,6 +31,8 @@ impl fmt::Display for StatType {
             StatType::StrikeDamage => "damage",
             StatType::SpellDC => "spell-DC",
             StatType::SpellAttackBonus => "spell-attack",
+            StatType::UnlimitedAreaDamage => "unlimited-area-damage",
+            StatType::LimitedAreaDamage => "limited-area-damage",
         };
 
         write!(f, "{}", s)

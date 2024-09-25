@@ -43,6 +43,8 @@ pub fn get_table_for_statistic(stat: StatType) -> StatTable {
         StatType::StrikeDamage => strike_damage(),
         StatType::SpellDC => spell_dc(),
         StatType::SpellAttackBonus => spell_attack_bonus(),
+        StatType::UnlimitedAreaDamage => unlimited_area_damage(),
+        StatType::LimitedAreaDamage => limited_area_damage(),
     }
 }
 
@@ -517,6 +519,84 @@ fn spell_attack_bonus() -> StatTable {
     }
 }
 
+fn unlimited_area_damage() -> StatTable {
+    let values = vec![
+        vec![2],
+        vec![4],
+        vec![5],
+        vec![7],
+        vec![9],
+        vec![11],
+        vec![12],
+        vec![14],
+        vec![15],
+        vec![17],
+        vec![18],
+        vec![20],
+        vec![21],
+        vec![23],
+        vec![24],
+        vec![26],
+        vec![27],
+        vec![28],
+        vec![29],
+        vec![30],
+        vec![32],
+        vec![33],
+        vec![35],
+        vec![36],
+        vec![38],
+        vec![39],
+    ];
+    let values = to_float(values);
+
+    let proficiencies = vec![Proficiency::Moderate];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
+}
+
+fn limited_area_damage() -> StatTable {
+    let values = vec![
+        vec![4],
+        vec![6],
+        vec![7],
+        vec![11],
+        vec![14],
+        vec![18],
+        vec![21],
+        vec![25],
+        vec![28],
+        vec![32],
+        vec![35],
+        vec![39],
+        vec![42],
+        vec![46],
+        vec![49],
+        vec![53],
+        vec![56],
+        vec![60],
+        vec![63],
+        vec![67],
+        vec![70],
+        vec![74],
+        vec![77],
+        vec![81],
+        vec![84],
+        vec![88],
+    ];
+    let values = to_float(values);
+
+    let proficiencies = vec![Proficiency::Moderate];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -604,6 +684,18 @@ mod tests {
     #[test]
     fn validate_spell_attack_bonus_table() {
         let table = spell_attack_bonus();
+        validate_table(table);
+    }
+
+    #[test]
+    fn validate_unlimited_area_damage_table() {
+        let table = unlimited_area_damage();
+        validate_table(table);
+    }
+
+    #[test]
+    fn validate_limited_area_damage_table() {
+        let table = limited_area_damage();
         validate_table(table);
     }
 }
