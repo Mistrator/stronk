@@ -52,6 +52,7 @@ fn parse_stat_kind(kind: &str) -> Option<StatType> {
         "weakness" => Some(StatType::Weakness),
         "attack" | "att" => Some(StatType::StrikeAttackBonus),
         "damage" | "dmg" => Some(StatType::StrikeDamage),
+        "spell-dc" => Some(StatType::SpellDC),
         "spell-attack" => Some(StatType::SpellAttackBonus),
         _ => {
             logging::log(LogLevel::Error, format!("unknown statistic: {}", kind));
@@ -126,6 +127,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
         | StatType::Resistance
         | StatType::Weakness
         | StatType::StrikeAttackBonus
+        | StatType::SpellDC
         | StatType::SpellAttackBonus => {
             let stat_value = match parse_stat_value_integer(stat_kind, prompt_value) {
                 Some(s) => s,
@@ -358,6 +360,17 @@ mod tests {
         let result = handle_prompt(levels, "damage 2d12+12 piercing").unwrap();
         assert_eq!(result.stat.kind, StatType::StrikeDamage);
         assert!(float_eq(result.stat.value, 50.5));
+        assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_spell_dc() {
+        let levels = Levels::new(22, 20).unwrap();
+
+        let result = handle_prompt(levels, "spell-dc 50").unwrap();
+        assert_eq!(result.stat.kind, StatType::SpellDC);
+        assert!(float_eq(result.stat.value, 47.0));
         assert_eq!(result.proficiency, Proficiency::Extreme);
         assert_eq!(result.method, ScaleMethod::Exact);
     }

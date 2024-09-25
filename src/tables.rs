@@ -41,6 +41,7 @@ pub fn get_table_for_statistic(stat: StatType) -> StatTable {
         StatType::Weakness => resistance_weakness(),
         StatType::StrikeAttackBonus => strike_attack_bonus(),
         StatType::StrikeDamage => strike_damage(),
+        StatType::SpellDC => spell_dc(),
         StatType::SpellAttackBonus => spell_attack_bonus(),
     }
 }
@@ -430,6 +431,49 @@ fn strike_damage() -> StatTable {
     }
 }
 
+fn spell_dc() -> StatTable {
+    let values = vec![
+        vec![13, 16, 19],
+        vec![13, 16, 19],
+        vec![14, 17, 20],
+        vec![15, 18, 22],
+        vec![17, 20, 23],
+        vec![18, 21, 25],
+        vec![19, 22, 26],
+        vec![21, 24, 27],
+        vec![22, 25, 29],
+        vec![23, 26, 30],
+        vec![25, 28, 32],
+        vec![26, 29, 33],
+        vec![27, 30, 34],
+        vec![29, 32, 36],
+        vec![30, 33, 37],
+        vec![31, 34, 39],
+        vec![33, 36, 40],
+        vec![34, 37, 41],
+        vec![35, 38, 43],
+        vec![37, 40, 44],
+        vec![38, 41, 46],
+        vec![39, 42, 47],
+        vec![41, 44, 48],
+        vec![42, 45, 50],
+        vec![43, 46, 51],
+        vec![45, 48, 52],
+    ];
+    let values = to_float(values);
+
+    let proficiencies = vec![
+        Proficiency::Moderate,
+        Proficiency::High,
+        Proficiency::Extreme,
+    ];
+
+    StatTable {
+        values,
+        proficiencies,
+    }
+}
+
 fn spell_attack_bonus() -> StatTable {
     let values = vec![
         vec![5, 8, 11],
@@ -548,6 +592,12 @@ mod tests {
     #[test]
     fn validate_strike_damage_table() {
         let table = strike_damage();
+        validate_table(table);
+    }
+
+    #[test]
+    fn validate_spell_dc_table() {
+        let table = spell_dc();
         validate_table(table);
     }
 

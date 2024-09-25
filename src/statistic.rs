@@ -11,6 +11,7 @@ pub enum StatType {
     Weakness,
     StrikeAttackBonus,
     StrikeDamage,
+    SpellDC,
     SpellAttackBonus,
 }
 
@@ -26,6 +27,7 @@ impl fmt::Display for StatType {
             StatType::Weakness => "weakness",
             StatType::StrikeAttackBonus => "attack",
             StatType::StrikeDamage => "damage",
+            StatType::SpellDC => "spell-DC",
             StatType::SpellAttackBonus => "spell-attack",
         };
 
