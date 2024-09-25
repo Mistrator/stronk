@@ -50,8 +50,8 @@ fn parse_stat_kind(kind: &str) -> Option<StatType> {
         "hp" => Some(StatType::HitPoints),
         "resistance" => Some(StatType::Resistance),
         "weakness" => Some(StatType::Weakness),
-        "attack" | "att" => Some(StatType::StrikeAttackBonus),
-        "damage" | "dmg" => Some(StatType::StrikeDamage),
+        "strike-attack" | "att" => Some(StatType::StrikeAttackBonus),
+        "strike-damage" | "dmg" => Some(StatType::StrikeDamage),
         "spell-dc" => Some(StatType::SpellDC),
         "spell-attack" => Some(StatType::SpellAttackBonus),
         "unlimited-area-damage" => Some(StatType::UnlimitedAreaDamage),
@@ -245,8 +245,8 @@ mod tests {
         assert!(handle_prompt(levels, "ac -1").is_some());
         assert!(handle_prompt(levels, "ac -34").is_some());
 
-        assert!(handle_prompt(levels, "damage 2d12+11 bludgeoning").is_some());
-        assert!(handle_prompt(levels, "damage 3d10 + 17 slashing plus 2d6+6 cold plus 1d4 acid plus 2 vitality").is_some());
+        assert!(handle_prompt(levels, "strike-damage 2d12+11 bludgeoning").is_some());
+        assert!(handle_prompt(levels, "strike-damage 3d10 + 17 slashing plus 2d6+6 cold plus 1d4 acid plus 2 vitality").is_some());
     }
 
     #[test]
@@ -348,7 +348,7 @@ mod tests {
     fn scale_strike_attack_bonus() {
         let levels = Levels::new(11, 19).unwrap();
 
-        let result = handle_prompt(levels, "attack +24").unwrap();
+        let result = handle_prompt(levels, "strike-attack +24").unwrap();
         assert_eq!(result.stat.kind, StatType::StrikeAttackBonus);
         assert!(float_eq(result.stat.value, 36.0));
         assert_eq!(result.proficiency, Proficiency::High);
@@ -359,7 +359,7 @@ mod tests {
     fn scale_strike_damage() {
         let levels = Levels::new(7, 17).unwrap();
 
-        let result = handle_prompt(levels, "damage 2d12+12 piercing").unwrap();
+        let result = handle_prompt(levels, "strike-damage 2d12+12 piercing").unwrap();
         assert_eq!(result.stat.kind, StatType::StrikeDamage);
         assert!(float_eq(result.stat.value, 50.0));
         assert_eq!(result.proficiency, Proficiency::Extreme);
