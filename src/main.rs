@@ -48,6 +48,8 @@ fn parse_stat_kind(kind: &str) -> Option<StatType> {
         "ac" => Some(StatType::ArmorClass),
         "save" | "fortitude" | "fort" | "reflex" | "ref" | "will" => Some(StatType::SavingThrow),
         "hp" => Some(StatType::HitPoints),
+        "resistance" => Some(StatType::Resistance),
+        "weakness" => Some(StatType::Weakness),
         "attack" | "att" => Some(StatType::StrikeAttackBonus),
         "damage" | "dmg" => Some(StatType::StrikeDamage),
         "spell-attack" => Some(StatType::SpellAttackBonus),
@@ -121,6 +123,8 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
         | StatType::ArmorClass
         | StatType::SavingThrow
         | StatType::HitPoints
+        | StatType::Resistance
+        | StatType::Weakness
         | StatType::StrikeAttackBonus
         | StatType::SpellAttackBonus => {
             let stat_value = match parse_stat_value_integer(stat_kind, prompt_value) {
@@ -310,6 +314,28 @@ mod tests {
         let result = handle_prompt(levels, "hp 367").unwrap();
         assert_eq!(result.stat.kind, StatType::HitPoints);
         assert!(float_eq(result.stat.value, 127.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_resistance() {
+        let levels = Levels::new(7, 12).unwrap();
+
+        let result = handle_prompt(levels, "resistance 10").unwrap();
+        assert_eq!(result.stat.kind, StatType::Resistance);
+        assert!(float_eq(result.stat.value, 15.0));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Exact);
+    }
+
+    #[test]
+    fn scale_weakness() {
+        let levels = Levels::new(8, 23).unwrap();
+
+        let result = handle_prompt(levels, "weakness 6").unwrap();
+        assert_eq!(result.stat.kind, StatType::Weakness);
+        assert!(float_eq(result.stat.value, 13.0));
         assert_eq!(result.proficiency, Proficiency::Low);
         assert_eq!(result.method, ScaleMethod::Exact);
     }
