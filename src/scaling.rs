@@ -385,7 +385,7 @@ mod tests {
         let result = scale_statistic(levels, stat);
 
         assert_eq!(result.stat.kind, StatType::StrikeDamage);
-        assert!(float_eq(result.stat.value, 32.5));
+        assert!(float_eq(result.stat.value, 32.0));
         assert_eq!(result.proficiency, Proficiency::High);
         assert_eq!(result.method, ScaleMethod::Exact);
     }
@@ -393,7 +393,7 @@ mod tests {
     #[test]
     fn strike_damage_interpolate() {
         let levels = Levels::new(14, 6).unwrap();
-        let stat = Statistic::new(StatType::StrikeDamage, 30.5);
+        let stat = Statistic::new(StatType::StrikeDamage, 30.0);
 
         let result = scale_statistic(levels, stat);
 
@@ -411,7 +411,7 @@ mod tests {
         let result = scale_statistic(levels, stat);
 
         assert_eq!(result.stat.kind, StatType::StrikeDamage);
-        assert!(float_eq(result.stat.value, 71.5));
+        assert!(float_eq(result.stat.value, 72.0));
         assert_eq!(result.proficiency, Proficiency::Extreme);
         assert_eq!(result.method, ScaleMethod::Extrapolated);
     }

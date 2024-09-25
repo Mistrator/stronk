@@ -361,7 +361,7 @@ mod tests {
 
         let result = handle_prompt(levels, "damage 2d12+12 piercing").unwrap();
         assert_eq!(result.stat.kind, StatType::StrikeDamage);
-        assert!(float_eq(result.stat.value, 50.5));
+        assert!(float_eq(result.stat.value, 50.0));
         assert_eq!(result.proficiency, Proficiency::Extreme);
         assert_eq!(result.method, ScaleMethod::Exact);
     }

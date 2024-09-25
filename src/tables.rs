@@ -1,4 +1,3 @@
-use crate::damage;
 use crate::statistic::StatType;
 use std::fmt;
 
@@ -55,22 +54,6 @@ fn to_float(table: Vec<Vec<i32>>) -> Vec<Vec<f64>> {
         let mut r: Vec<f64> = Vec::new();
         for x in row {
             r.push(x.into());
-        }
-        v.push(r);
-    }
-
-    v
-}
-
-fn to_average_damage(table: Vec<Vec<&str>>) -> Vec<Vec<f64>> {
-    let mut v: Vec<Vec<f64>> = Vec::new();
-
-    for row in table {
-        let mut r: Vec<f64> = Vec::new();
-        for x in row {
-            let average_damage = damage::parse_damage_expression(x)
-                .expect("tables should only have valid damage expressions");
-            r.push(average_damage);
         }
         v.push(r);
     }
@@ -391,34 +374,34 @@ fn strike_attack_bonus() -> StatTable {
 
 fn strike_damage() -> StatTable {
     let values = vec![
-        vec!["1d4", "1d4", "1d4+1", "1d6+1"],
-        vec!["1d4+1", "1d4+2", "1d6+2", "1d6+3"],
-        vec!["1d4+2", "1d6+2", "1d6+3", "1d8+4"],
-        vec!["1d6+3", "1d8+4", "1d10+4", "1d12+4"],
-        vec!["1d6+5", "1d8+6", "1d10+6", "1d12+8"],
-        vec!["2d4+4", "2d6+5", "2d8+5", "2d10+7"],
-        vec!["2d4+6", "2d6+6", "2d8+7", "2d12+7"],
-        vec!["2d4+7", "2d6+8", "2d8+9", "2d12+10"],
-        vec!["2d6+6", "2d8+8", "2d10+9", "2d12+12"],
-        vec!["2d6+8", "2d8+9", "2d10+11", "2d12+15"],
-        vec!["2d6+9", "2d8+11", "2d10+13", "2d12+17"],
-        vec!["2d6+10", "2d10+11", "2d12+13", "2d12+20"],
-        vec!["2d8+10", "2d10+12", "2d12+15", "2d12+22"],
-        vec!["3d6+10", "3d8+12", "3d10+14", "3d12+19"],
-        vec!["3d6+11", "3d8+14", "3d10+16", "3d12+21"],
-        vec!["3d6+13", "3d8+15", "3d10+18", "3d12+24"],
-        vec!["3d6+14", "3d10+14", "3d12+17", "3d12+26"],
-        vec!["3d6+15", "3d10+15", "3d12+18", "3d12+29"],
-        vec!["3d6+16", "3d10+16", "3d12+19", "3d12+31"],
-        vec!["3d6+17", "3d10+17", "3d12+20", "3d12+34"],
-        vec!["4d6+14", "4d8+17", "4d10+20", "4d12+29"],
-        vec!["4d6+15", "4d8+19", "4d10+22", "4d12+32"],
-        vec!["4d6+17", "4d8+20", "4d10+24", "4d12+34"],
-        vec!["4d6+18", "4d8+22", "4d10+26", "4d12+37"],
-        vec!["4d6+19", "4d10+20", "4d12+24", "4d12+39"],
-        vec!["4d6+21", "4d10+22", "4d12+26", "4d12+42"],
+        vec![2, 3, 3, 4],
+        vec![3, 4, 5, 6],
+        vec![4, 5, 6, 8],
+        vec![6, 8, 9, 11],
+        vec![8, 10, 12, 15],
+        vec![9, 12, 14, 18],
+        vec![11, 13, 16, 20],
+        vec![12, 15, 18, 23],
+        vec![13, 17, 20, 25],
+        vec![15, 18, 22, 28],
+        vec![16, 20, 24, 30],
+        vec![17, 22, 26, 33],
+        vec![19, 23, 28, 35],
+        vec![20, 25, 30, 38],
+        vec![21, 27, 32, 40],
+        vec![23, 28, 34, 43],
+        vec![24, 30, 36, 45],
+        vec![25, 31, 37, 48],
+        vec![26, 32, 38, 50],
+        vec![27, 33, 40, 53],
+        vec![28, 35, 42, 55],
+        vec![29, 37, 44, 58],
+        vec![31, 38, 46, 60],
+        vec![32, 40, 48, 63],
+        vec![33, 42, 50, 65],
+        vec![35, 44, 52, 68],
     ];
-    let values = to_average_damage(values);
+    let values = to_float(values);
 
     let proficiencies = vec![
         Proficiency::Low,
