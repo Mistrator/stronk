@@ -1,11 +1,12 @@
 use std::env;
 use std::io;
 use std::process;
+use stronk::color::{self, Color};
 use stronk::damage::{self, Damage};
 use stronk::levels::Levels;
 use stronk::logging::{self, LogLevel};
-use stronk::scaling::{self, ScaleResult};
-use stronk::statistic::{StatType, Statistic};
+use stronk::scaling::{self, ScaleMethod, ScaleResult};
+use stronk::statistic::{self, StatType, Statistic};
 
 fn print_usage() {
     eprintln!("usage: stronk <current_level> <target_level>");
@@ -147,11 +148,36 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
     }
 }
 
+fn print_scale_details(result: ScaleResult) {
+    let colored_method = format!("{}", result.method);
+    let color = match result.method {
+        ScaleMethod::Exact => Color::Green,
+        ScaleMethod::Interpolated => Color::Green,
+        ScaleMethod::Extrapolated => Color::BrightYellow,
+    };
+    let colored_method = color::color_text(colored_method, color);
+
+    println!("[{}] [{}]", result.proficiency, colored_method);
+}
+
 fn print_result(result: ScaleResult) {
-    println!(
-        "{} {} [{}, {}]",
-        result.stat.kind, result.stat.value, result.proficiency, result.method
-    );
+    let stat_rounded = result.stat.value.floor();
+
+    let colored_stat = if statistic::is_bonus(result.stat.kind) {
+        format!("+{}", stat_rounded)
+    } else {
+        format!("{}", stat_rounded)
+    };
+
+    let colored_stat = color::color_text(colored_stat, Color::BrightCyan);
+
+    print!("{} {} ", result.stat.kind, colored_stat);
+
+    if result.method != ScaleMethod::Exact {
+        print!("({:.2}) ", result.stat.value);
+    }
+
+    print_scale_details(result);
 }
 
 fn print_damage(damage: &Damage, result: ScaleResult) {
@@ -161,9 +187,10 @@ fn print_damage(damage: &Damage, result: ScaleResult) {
         #[rustfmt::skip]
         let damage_expression = damage::build_damage_expression(component.average_value, result.proficiency);
 
+        let colored_damage_expression = color::color_text(damage_expression, Color::BrightCyan);
         print!(
-            "{} ({:.1}) {} ",
-            damage_expression, component.average_value, component.damage_type
+            "{} ({:.2}) {} ",
+            colored_damage_expression, component.average_value, component.damage_type
         );
 
         let n = damage.components.len();
@@ -172,7 +199,7 @@ fn print_damage(damage: &Damage, result: ScaleResult) {
         }
     }
 
-    println!("[{}, {}]", result.proficiency, result.method);
+    print_scale_details(result);
 }
 
 fn main() {

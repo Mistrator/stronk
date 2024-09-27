@@ -39,6 +39,14 @@ impl fmt::Display for StatType {
     }
 }
 
+pub fn is_bonus(stat: StatType) -> bool {
+    stat == StatType::Perception
+        || stat == StatType::Skill
+        || stat == StatType::SavingThrow
+        || stat == StatType::StrikeAttackBonus
+        || stat == StatType::SpellAttackBonus
+}
+
 #[derive(Clone, Copy)]
 pub struct Statistic {
     pub kind: StatType,

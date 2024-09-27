@@ -1,3 +1,4 @@
+pub mod color;
 pub mod damage;
 pub mod levels;
 pub mod logging;

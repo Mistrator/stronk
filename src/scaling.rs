@@ -16,9 +16,9 @@ pub enum ScaleMethod {
 impl fmt::Display for ScaleMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            ScaleMethod::Exact => "exact",
-            ScaleMethod::Interpolated => "interpolated",
-            ScaleMethod::Extrapolated => "extrapolated",
+            ScaleMethod::Exact => "Exact",
+            ScaleMethod::Interpolated => "Interpolated",
+            ScaleMethod::Extrapolated => "Extrapolated",
         };
 
         write!(f, "{}", s)

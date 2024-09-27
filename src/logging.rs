@@ -1,3 +1,4 @@
+use crate::color::{self, Color};
 use std::fmt;
 
 pub enum LogLevel {
@@ -7,12 +8,15 @@ pub enum LogLevel {
 }
 
 // Accept both String and &str so we can call this with string literals and format!().
+#[rustfmt::skip]
 pub fn log<T: Into<String> + fmt::Display>(level: LogLevel, msg: T) {
-    let prefix = match level {
-        LogLevel::Info => "info",
-        LogLevel::Warning => "warning",
-        LogLevel::Error => "error",
-    };
-
-    eprintln!("{}: {}", prefix, msg);
+    match level {
+        LogLevel::Info => eprintln!("{}", msg),
+        LogLevel::Warning => {
+            eprintln!("{}: {}", color::color_text("warning", Color::BrightYellow), msg);
+        }
+        LogLevel::Error => {
+            eprintln!("{}: {}", color::color_text("error", Color::BrightRed), msg);
+        }
+    }
 }
