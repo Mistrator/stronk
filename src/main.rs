@@ -1,4 +1,5 @@
 use std::env;
+use std::fs;
 use std::io;
 use std::process;
 use stronk::color::{self, Color};
@@ -8,8 +9,13 @@ use stronk::logging::{self, LogLevel};
 use stronk::scaling::{self, ScaleMethod, ScaleResult};
 use stronk::statistic::{self, StatType, Statistic};
 
+struct Arguments {
+    pub levels: Levels,
+    pub input_file: Option<String>,
+}
+
 fn print_usage() {
-    eprintln!("usage: stronk <current_level> <target_level>");
+    eprintln!("usage: stronk <current_level> <target_level> [input_file]");
 }
 
 fn parse_level(level: &str) -> Option<i32> {
@@ -25,8 +31,8 @@ fn parse_level(level: &str) -> Option<i32> {
     }
 }
 
-fn parse_args(args: &Vec<&str>) -> Option<Levels> {
-    if args.len() != 3 {
+fn parse_args(args: &Vec<&str>) -> Option<Arguments> {
+    if !(args.len() == 3 || args.len() == 4) {
         print_usage();
         return None;
     }
@@ -35,7 +41,15 @@ fn parse_args(args: &Vec<&str>) -> Option<Levels> {
     if let Some(c) = current_level {
         let target_level = parse_level(args[2]);
         if let Some(t) = target_level {
-            return Levels::new(c, t);
+            if let Some(levels) = Levels::new(c, t) {
+                let input_file = if args.len() == 4 {
+                    Some(String::from(args[3]))
+                } else {
+                    None
+                };
+
+                return Some(Arguments { levels, input_file });
+            }
         }
     }
 
@@ -202,6 +216,45 @@ fn print_damage(damage: &Damage, result: ScaleResult) {
     print_scale_details(result);
 }
 
+fn process_input_file(args: Arguments) -> bool {
+    let input_file = args
+        .input_file
+        .expect("input file argument should have been checked to exist");
+
+    let contents = match fs::read_to_string(input_file) {
+        Ok(c) => c,
+        Err(_) => {
+            logging::log(LogLevel::Error, "failed to read input file");
+            return false;
+        }
+    };
+
+    for line in contents.lines() {
+        if line.is_empty() || line.starts_with('#') || line.starts_with("//") {
+            println!("{}", line);
+            continue;
+        }
+
+        if handle_prompt(args.levels, line).is_none() {
+            logging::log(LogLevel::Error, "failed to process input file");
+            return false;
+        }
+    }
+
+    true
+}
+
+fn start_interactive_prompt(args: Arguments) {
+    loop {
+        let mut prompt = String::new();
+        io::stdin()
+            .read_line(&mut prompt)
+            .expect("failed to read prompt");
+
+        handle_prompt(args.levels, &prompt);
+    }
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -209,20 +262,17 @@ fn main() {
     // instead of having to use String::from() everywhere.
     let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 
-    let levels = match parse_args(&args) {
+    let parsed_args = match parse_args(&args) {
         Some(x) => x,
         None => {
             process::exit(1);
         }
     };
 
-    loop {
-        let mut prompt = String::new();
-        io::stdin()
-            .read_line(&mut prompt)
-            .expect("failed to read prompt");
-
-        handle_prompt(levels, &prompt);
+    if parsed_args.input_file.is_some() {
+        process_input_file(parsed_args);
+    } else {
+        start_interactive_prompt(parsed_args);
     }
 }
 
@@ -235,15 +285,17 @@ mod tests {
 
     #[test]
     fn accept_valid_args() {
-        let levels = parse_args(&vec!["", "1", "2"]).unwrap();
-        assert_eq!(levels.current, 1);
-        assert_eq!(levels.target, 2);
+        let args = parse_args(&vec!["", "1", "2"]).unwrap();
+        assert_eq!(args.levels.current, 1);
+        assert_eq!(args.levels.target, 2);
 
         assert!(parse_args(&vec!["", "2", "1"]).is_some());
         assert!(parse_args(&vec!["", "1", "1"]).is_some());
         assert!(parse_args(&vec!["", "-1", "24"]).is_some());
         assert!(parse_args(&vec!["", "24", "-1"]).is_some());
         assert!(parse_args(&vec!["something", "1", "2"]).is_some());
+
+        assert!(parse_args(&vec!["", "1", "2", "input.txt"]).is_some());
     }
 
     #[test]
@@ -256,7 +308,8 @@ mod tests {
         assert!(parse_args(&vec!["", "-2", "2"]).is_none());
         assert!(parse_args(&vec!["", "1", "25"]).is_none());
         assert!(parse_args(&vec!["", "1", "2.345"]).is_none());
-        assert!(parse_args(&vec!["", "1", "2", "3"]).is_none());
+
+        assert!(parse_args(&vec!["", "1", "2", "input.txt", "4"]).is_none());
     }
 
     #[rustfmt::skip]
@@ -292,6 +345,36 @@ mod tests {
         assert!(handle_prompt(levels, "ac 2d6+1 fire").is_none());
         assert!(handle_prompt(levels, "damage 1d4+1").is_none());
         assert!(handle_prompt(levels, "1d6+2").is_none());
+    }
+
+    #[test]
+    fn accept_valid_input_file() {
+        let args = Arguments {
+            levels: Levels::new(9, 15).unwrap(),
+            input_file: Some(String::from("testdata/valid_input_file.txt")),
+        };
+
+        assert!(process_input_file(args));
+    }
+
+    #[test]
+    fn reject_invalid_input_file() {
+        let args = Arguments {
+            levels: Levels::new(9, 15).unwrap(),
+            input_file: Some(String::from("testdata/invalid_input_file.txt")),
+        };
+
+        assert_eq!(process_input_file(args), false);
+    }
+
+    #[test]
+    fn reject_nonexistent_input_file() {
+        let args = Arguments {
+            levels: Levels::new(9, 15).unwrap(),
+            input_file: Some(String::from("testdata/nonexistent_input_file.txt")),
+        };
+
+        assert_eq!(process_input_file(args), false);
     }
 
     #[test]

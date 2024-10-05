@@ -51,6 +51,17 @@ strike-damage 2d6+8 bludgeoning
 strike-damage 2d12+17 piercing plus 3d6 fire plus 1 void
 ```
 
+### Input file
+
+Scale a stat block from `current_level` to `target_level`:
+```
+$ stronk <current_level> <target_level> <input_file>
+```
+
+The stat block is a plain text file containing one statistic per line. Each line follows the same syntax as the interactive prompt.
+
+Comments and empty lines are supported and written to output. Comments start with `#` or `//`.
+
 ## How it works
 
 In short, we first calculate the proficiency the creature has for a given statistic and then use this proficiency to rebuild the creature on `target_level` using the tables in Building Creatures guidelines in GM Core.

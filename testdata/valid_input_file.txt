@@ -1,0 +1,26 @@
+perception +18
+
+# athletics
+skill +20
+
+ac 27
+fortitude +21
+reflex +15
+will +18
+
+hp 190
+
+# fire
+resistance 12
+
+// cold
+weakness 6
+
+strike-attack +19
+strike-damage 2d12+17 slashing
+
+spell-dc 25
+spell-attack +17
+
+unlimited-area-damage 2d8+9 bludgeoning
+limited-area-damage 10d6 fire
