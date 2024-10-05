@@ -246,6 +246,8 @@ fn process_input_file(args: Arguments) -> bool {
 
 fn start_interactive_prompt(args: Arguments) {
     loop {
+        eprint!("> ");
+
         let mut prompt = String::new();
         io::stdin()
             .read_line(&mut prompt)
