@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use std::io;
+use std::io::{self, IsTerminal};
 use std::process;
 use stronk::color::{self, Color};
 use stronk::damage::{self, Damage};
@@ -162,6 +162,14 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
     }
 }
 
+fn color_if_terminal(text: &str, color: Color) -> String {
+    if io::stdout().is_terminal() {
+        color::color_text(text, color)
+    } else {
+        String::from(text)
+    }
+}
+
 fn print_scale_details(result: ScaleResult) {
     let colored_method = format!("{}", result.method);
     let color = match result.method {
@@ -169,7 +177,7 @@ fn print_scale_details(result: ScaleResult) {
         ScaleMethod::Interpolated => Color::Green,
         ScaleMethod::Extrapolated => Color::BrightYellow,
     };
-    let colored_method = color::color_text(colored_method, color);
+    let colored_method = color_if_terminal(&colored_method, color);
 
     println!("[{}] [{}]", result.proficiency, colored_method);
 }
@@ -183,7 +191,7 @@ fn print_result(result: ScaleResult) {
         format!("{}", stat_rounded)
     };
 
-    let colored_stat = color::color_text(colored_stat, Color::BrightCyan);
+    let colored_stat = color_if_terminal(&colored_stat, Color::BrightCyan);
 
     print!("{} {} ", result.stat.kind, colored_stat);
 
@@ -201,7 +209,7 @@ fn print_damage(damage: &Damage, result: ScaleResult) {
         #[rustfmt::skip]
         let damage_expression = damage::build_damage_expression(component.average_value, result.proficiency);
 
-        let colored_damage_expression = color::color_text(damage_expression, Color::BrightCyan);
+        let colored_damage_expression = color_if_terminal(&damage_expression, Color::BrightCyan);
         print!(
             "{} ({:.2}) {} ",
             colored_damage_expression, component.average_value, component.damage_type
