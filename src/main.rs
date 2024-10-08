@@ -18,6 +18,13 @@ fn print_usage() {
     eprintln!("usage: stronk <current_level> <target_level> [input_file]");
 }
 
+fn print_version() {
+    const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+    let version_str = String::from(VERSION.unwrap_or("(unknown version)"));
+
+    eprintln!("stronk {}", version_str);
+}
+
 fn parse_level(level: &str) -> Option<i32> {
     match level.parse() {
         Ok(x) => Some(x),
@@ -253,6 +260,8 @@ fn process_input_file(args: Arguments) -> bool {
 }
 
 fn start_interactive_prompt(args: Arguments) {
+    print_version();
+
     loop {
         eprint!("> ");
 
