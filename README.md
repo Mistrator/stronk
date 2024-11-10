@@ -30,7 +30,7 @@ Statistic types:
 - `perception / per`
 - `skill`: all skill modifiers
 - `ac`
-- `save / fortitude / fort / reflex / ref / will`
+- `fortitude / fort / reflex / ref / will`
 - `hp`
 - `resistance`: resistance to a damage type
 - `weakness`: weakness to a damage type

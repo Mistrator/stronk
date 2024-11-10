@@ -34,7 +34,7 @@ pub fn get_table_for_statistic(stat: StatType) -> StatTable {
         StatType::Perception => perception(),
         StatType::Skill => skills(),
         StatType::ArmorClass => armor_class(),
-        StatType::SavingThrow => saving_throws(),
+        StatType::SavingThrow(_) => saving_throws(),
         StatType::HitPoints => hit_points(),
         StatType::Resistance => resistance_weakness(),
         StatType::Weakness => resistance_weakness(),

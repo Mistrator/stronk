@@ -1,11 +1,18 @@
 use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+pub enum SavingThrowType {
+    Fortitude,
+    Reflex,
+    Will,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum StatType {
     Perception,
     Skill,
     ArmorClass,
-    SavingThrow,
+    SavingThrow(SavingThrowType),
     HitPoints,
     Resistance,
     Weakness,
@@ -23,7 +30,11 @@ impl fmt::Display for StatType {
             StatType::Perception => "perception",
             StatType::Skill => "skill",
             StatType::ArmorClass => "AC",
-            StatType::SavingThrow => "save",
+            StatType::SavingThrow(kind) => match kind {
+                SavingThrowType::Fortitude => "fortitude",
+                SavingThrowType::Reflex => "reflex",
+                SavingThrowType::Will => "will",
+            },
             StatType::HitPoints => "HP",
             StatType::Resistance => "resistance",
             StatType::Weakness => "weakness",
@@ -40,11 +51,14 @@ impl fmt::Display for StatType {
 }
 
 pub fn is_bonus(stat: StatType) -> bool {
-    stat == StatType::Perception
-        || stat == StatType::Skill
-        || stat == StatType::SavingThrow
-        || stat == StatType::StrikeAttackBonus
-        || stat == StatType::SpellAttackBonus
+    match stat {
+        StatType::Perception
+            | StatType::Skill
+            | StatType::SavingThrow(_)
+            | StatType::StrikeAttackBonus
+            | StatType::SpellAttackBonus => true,
+        _ => false,
+    }
 }
 
 #[derive(Clone, Copy)]

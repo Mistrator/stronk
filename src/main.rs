@@ -7,7 +7,7 @@ use stronk::damage::{self, Damage};
 use stronk::levels::Levels;
 use stronk::logging::{self, LogLevel};
 use stronk::scaling::{self, ScaleMethod, ScaleResult};
-use stronk::statistic::{self, StatType, Statistic};
+use stronk::statistic::{self, SavingThrowType, StatType, Statistic};
 
 struct Arguments {
     pub levels: Levels,
@@ -68,7 +68,9 @@ fn parse_stat_kind(kind: &str) -> Option<StatType> {
         "perception" | "per" => Some(StatType::Perception),
         "skill" => Some(StatType::Skill),
         "ac" => Some(StatType::ArmorClass),
-        "save" | "fortitude" | "fort" | "reflex" | "ref" | "will" => Some(StatType::SavingThrow),
+        "fortitude" | "fort" => Some(StatType::SavingThrow(SavingThrowType::Fortitude)),
+        "reflex" | "ref" => Some(StatType::SavingThrow(SavingThrowType::Reflex)),
+        "will" => Some(StatType::SavingThrow(SavingThrowType::Will)),
         "hp" => Some(StatType::HitPoints),
         "resistance" => Some(StatType::Resistance),
         "weakness" => Some(StatType::Weakness),
@@ -146,7 +148,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
         StatType::Perception
         | StatType::Skill
         | StatType::ArmorClass
-        | StatType::SavingThrow
+        | StatType::SavingThrow(_)
         | StatType::HitPoints
         | StatType::Resistance
         | StatType::Weakness
@@ -433,10 +435,22 @@ mod tests {
     fn scale_saving_throw() {
         let levels = Levels::new(6, 0).unwrap();
 
-        let result = handle_prompt(levels, "save +11").unwrap();
-        assert_eq!(result.stat.kind, StatType::SavingThrow);
+        let result = handle_prompt(levels, "fortitude +11").unwrap();
+        assert_eq!(result.stat.kind, StatType::SavingThrow(SavingThrowType::Fortitude));
         assert!(float_eq(result.stat.value, 3.0));
         assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "reflex +17").unwrap();
+        assert_eq!(result.stat.kind, StatType::SavingThrow(SavingThrowType::Reflex));
+        assert!(float_eq(result.stat.value, 9.0));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "will +14").unwrap();
+        assert_eq!(result.stat.kind, StatType::SavingThrow(SavingThrowType::Will));
+        assert!(float_eq(result.stat.value, 6.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
         assert_eq!(result.method, ScaleMethod::Exact);
     }
 
