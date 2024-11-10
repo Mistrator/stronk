@@ -8,9 +8,30 @@ pub enum SavingThrowType {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+pub enum SkillType {
+    Acrobatics,
+    Arcana,
+    Athletics,
+    Crafting,
+    Deception,
+    Diplomacy,
+    Intimidation,
+    Lore,
+    Medicine,
+    Nature,
+    Occultism,
+    Performance,
+    Religion,
+    Society,
+    Stealth,
+    Survival,
+    Thievery,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum StatType {
     Perception,
-    Skill,
+    Skill(SkillType),
     ArmorClass,
     SavingThrow(SavingThrowType),
     HitPoints,
@@ -28,7 +49,25 @@ impl fmt::Display for StatType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             StatType::Perception => "perception",
-            StatType::Skill => "skill",
+            StatType::Skill(kind) => match kind {
+                SkillType::Acrobatics => "acrobatics",
+                SkillType::Arcana => "arcana",
+                SkillType::Athletics => "athletics",
+                SkillType::Crafting => "crafting",
+                SkillType::Deception => "deception",
+                SkillType::Diplomacy => "diplomacy",
+                SkillType::Intimidation => "intimidation",
+                SkillType::Lore => "lore",
+                SkillType::Medicine => "medicine",
+                SkillType::Nature => "nature",
+                SkillType::Occultism => "occultism",
+                SkillType::Performance => "performance",
+                SkillType::Religion => "religion",
+                SkillType::Society => "society",
+                SkillType::Stealth => "stealth",
+                SkillType::Survival => "survival",
+                SkillType::Thievery => "thievery",
+            },
             StatType::ArmorClass => "AC",
             StatType::SavingThrow(kind) => match kind {
                 SavingThrowType::Fortitude => "fortitude",
@@ -50,15 +89,13 @@ impl fmt::Display for StatType {
     }
 }
 
+#[rustfmt::skip]
 pub fn is_bonus(stat: StatType) -> bool {
-    match stat {
-        StatType::Perception
-            | StatType::Skill
-            | StatType::SavingThrow(_)
-            | StatType::StrikeAttackBonus
-            | StatType::SpellAttackBonus => true,
-        _ => false,
-    }
+    matches!(stat, StatType::Perception
+        | StatType::Skill(_)
+        | StatType::SavingThrow(_)
+        | StatType::StrikeAttackBonus
+        | StatType::SpellAttackBonus)
 }
 
 #[derive(Clone, Copy)]

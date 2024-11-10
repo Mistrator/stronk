@@ -28,7 +28,7 @@ Prompt syntax:
 
 Statistic types:
 - `perception / per`
-- `skill`: all skill modifiers
+- `acrobatics / arcana / lore / ...`: skills
 - `ac`
 - `fortitude / fort / reflex / ref / will`
 - `hp`

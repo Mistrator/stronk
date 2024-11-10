@@ -32,7 +32,7 @@ pub struct StatTable {
 pub fn get_table_for_statistic(stat: StatType) -> StatTable {
     match stat {
         StatType::Perception => perception(),
-        StatType::Skill => skills(),
+        StatType::Skill(_) => skills(),
         StatType::ArmorClass => armor_class(),
         StatType::SavingThrow(_) => saving_throws(),
         StatType::HitPoints => hit_points(),

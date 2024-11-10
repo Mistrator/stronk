@@ -7,7 +7,7 @@ use stronk::damage::{self, Damage};
 use stronk::levels::Levels;
 use stronk::logging::{self, LogLevel};
 use stronk::scaling::{self, ScaleMethod, ScaleResult};
-use stronk::statistic::{self, SavingThrowType, StatType, Statistic};
+use stronk::statistic::{self, SavingThrowType, SkillType, StatType, Statistic};
 
 struct Arguments {
     pub levels: Levels,
@@ -66,7 +66,23 @@ fn parse_args(args: &Vec<&str>) -> Option<Arguments> {
 fn parse_stat_kind(kind: &str) -> Option<StatType> {
     match kind {
         "perception" | "per" => Some(StatType::Perception),
-        "skill" => Some(StatType::Skill),
+        "acrobatics" => Some(StatType::Skill(SkillType::Acrobatics)),
+        "arcana" => Some(StatType::Skill(SkillType::Arcana)),
+        "athletics" => Some(StatType::Skill(SkillType::Athletics)),
+        "crafting" => Some(StatType::Skill(SkillType::Crafting)),
+        "deception" => Some(StatType::Skill(SkillType::Deception)),
+        "diplomacy" => Some(StatType::Skill(SkillType::Diplomacy)),
+        "intimidation" => Some(StatType::Skill(SkillType::Intimidation)),
+        "lore" => Some(StatType::Skill(SkillType::Lore)),
+        "medicine" => Some(StatType::Skill(SkillType::Medicine)),
+        "nature" => Some(StatType::Skill(SkillType::Nature)),
+        "occultism" => Some(StatType::Skill(SkillType::Occultism)),
+        "performance" => Some(StatType::Skill(SkillType::Performance)),
+        "religion" => Some(StatType::Skill(SkillType::Religion)),
+        "society" => Some(StatType::Skill(SkillType::Society)),
+        "stealth" => Some(StatType::Skill(SkillType::Stealth)),
+        "survival" => Some(StatType::Skill(SkillType::Survival)),
+        "thievery" => Some(StatType::Skill(SkillType::Thievery)),
         "ac" => Some(StatType::ArmorClass),
         "fortitude" | "fort" => Some(StatType::SavingThrow(SavingThrowType::Fortitude)),
         "reflex" | "ref" => Some(StatType::SavingThrow(SavingThrowType::Reflex)),
@@ -146,7 +162,7 @@ fn handle_prompt(levels: Levels, prompt: &str) -> Option<ScaleResult> {
             Some(scale_result)
         }
         StatType::Perception
-        | StatType::Skill
+        | StatType::Skill(_)
         | StatType::ArmorClass
         | StatType::SavingThrow(_)
         | StatType::HitPoints
@@ -413,10 +429,106 @@ mod tests {
     fn scale_skill() {
         let levels = Levels::new(3, 4).unwrap();
 
-        let result = handle_prompt(levels, "skill +13").unwrap();
-        assert_eq!(result.stat.kind, StatType::Skill);
+        let result = handle_prompt(levels, "acrobatics +13").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Acrobatics));
         assert!(float_eq(result.stat.value, 15.0));
         assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "arcana +7").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Arcana));
+        assert!(float_eq(result.stat.value, 8.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "athletics +10").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Athletics));
+        assert!(float_eq(result.stat.value, 12.0));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "crafting +10").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Crafting));
+        assert!(float_eq(result.stat.value, 12.0));
+        assert_eq!(result.proficiency, Proficiency::High);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "deception +13").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Deception));
+        assert!(float_eq(result.stat.value, 15.0));
+        assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "diplomacy +13").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Diplomacy));
+        assert!(float_eq(result.stat.value, 15.0));
+        assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "intimidation +9").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Intimidation));
+        assert!(float_eq(result.stat.value, 10.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "lore +7").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Lore));
+        assert!(float_eq(result.stat.value, 8.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "medicine +13").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Medicine));
+        assert!(float_eq(result.stat.value, 15.0));
+        assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "nature +9").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Nature));
+        assert!(float_eq(result.stat.value, 10.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "occultism +13").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Occultism));
+        assert!(float_eq(result.stat.value, 15.0));
+        assert_eq!(result.proficiency, Proficiency::Extreme);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "performance +5").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Performance));
+        assert!(float_eq(result.stat.value, 7.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "religion +5").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Religion));
+        assert!(float_eq(result.stat.value, 7.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "society +9").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Society));
+        assert!(float_eq(result.stat.value, 10.0));
+        assert_eq!(result.proficiency, Proficiency::Moderate);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "stealth +7").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Stealth));
+        assert!(float_eq(result.stat.value, 8.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "survival +5").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Survival));
+        assert!(float_eq(result.stat.value, 7.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
+        assert_eq!(result.method, ScaleMethod::Exact);
+
+        let result = handle_prompt(levels, "thievery +5").unwrap();
+        assert_eq!(result.stat.kind, StatType::Skill(SkillType::Thievery));
+        assert!(float_eq(result.stat.value, 7.0));
+        assert_eq!(result.proficiency, Proficiency::Low);
         assert_eq!(result.method, ScaleMethod::Exact);
     }
 
@@ -431,6 +543,7 @@ mod tests {
         assert_eq!(result.method, ScaleMethod::Exact);
     }
 
+    #[rustfmt::skip]
     #[test]
     fn scale_saving_throw() {
         let levels = Levels::new(6, 0).unwrap();

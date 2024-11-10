@@ -1,7 +1,6 @@
 perception +18
 
-# athletics
-skill +20
+athletics +20
 
 ac 27
 fortitude +21
